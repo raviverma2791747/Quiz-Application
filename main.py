@@ -1,4 +1,5 @@
 import tkinter as tk
+import json
 
 class Option:
 	def __init__(self,root):
@@ -30,6 +31,11 @@ class Option:
 		self.optiontxtlbl.destroy()
 		self.optiontxt.destroy()
 
+	def Export(self):
+		data = {}
+		data["option"] = self.text
+		json.dump()
+		return data
 
 class Question:
 	def __init__(self,root,text=None,options=None,keys=None,time_limit=None,note=None,answer=None,jumble=None,responses=None):
@@ -132,7 +138,13 @@ class Question:
 	def Destroy(self):
 		self.frame.destroy()
 
-
+	def Export(self):
+		data = {}
+		data["question"] = self.text
+		data["options"] = []
+		for i in options:
+			data["options"].append(i.Export())
+		return 
 		
 class Section:
 	def __init__(self,root,name = None,time_limit = None,questions = None,jumble = False):
@@ -148,11 +160,10 @@ class Section:
 		self.questionframe = tk.Frame(self.frame,)
 
 		self.sectionnamelbl = tk.Label(self.sectionframe,text="Section Name")
-		self.sectionametext= tk.Text(self.sectionframe,height="4")
+		self.sectionametext= tk.Text(self.sectionframe,height="2")
 		self.sectionbtnframe = tk.Frame(self.sectionframe,)
 		self.sectionremovebtn = tk.Button(self.sectionbtnframe,text="Remove",command=lambda:self.frame.destroy())
 		self.addquestionbtn = tk.Button(self.sectionbtnframe,text="Add Question",command=self.AddQuestion)
-
 
 	def SetName(self,name=None):
 		if name is not None:
@@ -215,7 +226,7 @@ class Test:
 		self.testbtnframe = tk.Frame(self.testframe,)
 		self.addsectionbtn = tk.Button(self.testbtnframe,text="Add Section",command=self.AddSection)
 		self.testremovebtn = tk.Button(self.testbtnframe,text="Remove",command=lambda:self.frame.destroy())
-		self.savebtn = tk.Button(self.testbtnframe,text="Save")
+		self.savebtn = tk.Button(self.testbtnframe,text="Save",command=self.Export)
 
 	def SetName(self,name = None):
 		if name is not None:
@@ -253,11 +264,23 @@ class Test:
 		self.testbtnframe.grid(row=0,column=2)
 		self.testframe.grid(row = 0,column = 0)
 		self.sectionframe.grid(row = 1,column = 0)
-		self.frame.grid(row=row,column=column)
+		self.frame.grid(row=row,column=column,pady=10)
 
 	def Destroy(self):
 		pass
 
+	def Export(self):
+		data = {}
+		data["test name"] = "sample test name"
+		data["sections"] = [0]
+		data["sections"][0] = {"section name" : "sample section name","questions" : [0]}
+		data["sections"][0]["questions"][0] = {"question name":"sample question name","options":[0,1,2,3]}
+		data["sections"][0]["questions"][0]["options"][0] = "sample option 1"
+		data["sections"][0]["questions"][0]["options"][1] = "sample option 2"
+		data["sections"][0]["questions"][0]["options"][2] = "sample option 3"
+		data["sections"][0]["questions"][0]["options"][3] = "sample option 4"
+		file = open("data.json","w")
+		json.dump(data,file)
 
 class QuizEditor:
 	def __init__(self,window):
@@ -268,10 +291,6 @@ class QuizEditor:
 		self.test = Test(self.contentframe)
 		self.contentframe.grid(row = 0 , column = 0)
 		self.mainframe.pack(expand=True,fill="both",side = tk.LEFT)
-
-	def __del__(self):
-		pass
-
 
 window = tk.Tk()
 window.title("Quiz App")
