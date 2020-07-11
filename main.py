@@ -187,7 +187,7 @@ class Section:
 		else:
 			print("Sections: None")
 
-	def Grid(self,row=None,column=None):
+	def Grid(self,row=0,column=0):
 		self.sectionnamelbl.grid(row=0,column=0)
 		self.sectionametext.grid(row=0,column=1)
 		self.sectionbtnframe.grid(row=0,column=2)
@@ -195,7 +195,7 @@ class Section:
 		self.addquestionbtn.grid(row=1,column=0)
 		self.sectionframe.grid(row=0,column=0,pady=10,padx=10)
 		self.questionframe.grid(row=1,column=0,pady=10)
-		self.frame.grid(row=0,column=0,pady=10)
+		self.frame.grid(row=row,column=column,pady=10,padx=10)
 
 class Test:
 	def __init__(self,root,name = None,time_limit = None):
@@ -204,22 +204,18 @@ class Test:
 		self.sections = None
 		self.time_limit = time_limit
 
-		self.testframe  = tk.Frame(root,highlightbackground="black",highlightthickness=1,)
-		self.sectionsframe = tk.Frame(root,highlightbackground="black",highlightthickness=1,)
+		self.frame  = tk.Frame(root,highlightbackground="black",highlightthickness=1,)
+		self.testframe  = tk.Frame(self.frame,highlightbackground="black",highlightthickness=1,)
+		self.sectionframe = tk.Frame(self.frame,)
 
 		self.testnamelabel = tk.Label(self.testframe,text="Test Name",)
 		self.testnametext = tk.Text(self.testframe,height=1)
 		self.testtimelimit = tk.Entry(self.testframe)
-		self.addsectionbtn = tk.Button(self.testframe,text="Add Section",command=self.AddSection)
-		self.savebtn = tk.Button(self.testframe,text="Save")
 
-		self.testnamelabel.pack()
-		self.testnametext.pack()
-		self.testtimelimit.pack()
-		self.addsectionbtn.pack()
-		self.savebtn.pack()
-		self.testframe.grid(row = 0,column = 0)
-		self.sectionsframe.grid(row = 1,column = 0)
+		self.testbtnframe = tk.Frame(self.testframe,)
+		self.addsectionbtn = tk.Button(self.testbtnframe,text="Add Section",command=self.AddSection)
+		self.testremovebtn = tk.Button(self.testbtnframe,text="Remove",command=lambda:self.frame.destroy())
+		self.savebtn = tk.Button(self.testbtnframe,text="Save")
 
 	def SetName(self,name = None):
 		if name is not None:
@@ -228,9 +224,11 @@ class Test:
 	def AddSection(self):
 		if self.sections is None:
 			self.sections = list()
-			self.sections.append(Section(self.sectionsframe))
+			self.sections.append(Section(self.sectionframe))
+			self.sections[len(self.sections)-1].Grid(len(self.sections)-1,0)
 		else:
-			self.sections.append(Section(self.sectionsframe))
+			self.sections.append(Section(self.sectionframe))
+			self.sections[len(self.sections)-1].Grid(len(self.sections)-1,0)
 		
 	def Show(self):
 		print("Test")
@@ -245,9 +243,20 @@ class Test:
 		else:
 			print("Sections: None")
 
-	def Update():
-		for i in sections:
-			sections.Update()
+	def Grid(self,row=0,column=0):
+		self.testnamelabel.grid(row=0,column=0)
+		self.testnametext.grid(row=0,column=1)
+		#self.testtimelimit.pack()
+		self.addsectionbtn.grid(row=0,column=0)
+		self.testremovebtn.grid(row=1,column=0)
+		self.savebtn.grid(row=2,column=0)
+		self.testbtnframe.grid(row=0,column=2)
+		self.testframe.grid(row = 0,column = 0)
+		self.sectionframe.grid(row = 1,column = 0)
+		self.frame.grid(row=row,column=column)
+
+	def Destroy(self):
+		pass
 
 
 class QuizEditor:
