@@ -4,7 +4,7 @@ import json
 class Option:
 	def __init__(self,root):
 		self.root = root 
-		self.text = None
+		self.text = tk.StringVar() 
 		self.id = None
 
 		self.optiontxtlbl = tk.Label(self.root,text="Option")
@@ -33,15 +33,13 @@ class Option:
 
 	def Export(self):
 		data = {}
-		data["option"] = self.text
-		json.dump()
+		data["option"] = self.optiontxt.get("1.0","end")
 		return data
 
 class Question:
-	def __init__(self,root,text=None,options=None,keys=None,time_limit=None,note=None,answer=None,jumble=None,responses=None):
+	def __init__(self,root,options=None,keys=None,time_limit=None,note=None,answer=None,jumble=None,responses=None):
 		self.root = root 
 		self.id = None
-		self.text = None
 		self.options = None
 		self.removeoptionsbtn = None
 		self.keys = None
@@ -56,7 +54,6 @@ class Question:
 		self.questiontxt = tk.Text(self.frame,height=4)
 		self.quesbtnframe = tk.Frame(self.frame,)
 		self.questionsavebtn = tk.Button(self.quesbtnframe,text="Save",)
-		self.questionremovebtn = tk.Button(self.quesbtnframe,text="Remove",command=lambda:self.frame.destroy())
 		self.addoptionsbtn = tk.Button(self.quesbtnframe,text="Add Option",command=self.AddOption)
 		
 	def SetText(self,text=None):
@@ -125,13 +122,14 @@ class Question:
 		if index is not None:
 			self.options[index].Destroy()
 			self.removeoptionsbtn[index].destroy()
+			del self.options[index]
+			del	self.removeoptionsbtn[index]
 
 	def Grid(self,row=0,column=0):
 		self.questiontxtlbl.grid(row=0,column=0)
 		self.questiontxt.grid(row=0,column=1)
 		self.quesbtnframe.grid(row=0,column=2)
 		self.questionsavebtn.grid(row=0,column=0,)
-		self.questionremovebtn.grid(row=1,column=0)
 		self.addoptionsbtn.grid(row=2,column=0)
 		self.frame.grid(row=row,column=column,pady=10,)
 
@@ -140,11 +138,12 @@ class Question:
 
 	def Export(self):
 		data = {}
-		data["question"] = self.text
+		data["question"] = self.questiontxt.get("1.0","end")
 		data["options"] = []
-		for i in options:
-			data["options"].append(i.Export())
-		return 
+		if self.options is not None:
+			for i in self.options:
+				data["options"].append(i.Export())
+		return data
 		
 class Section:
 	def __init__(self,root,name = None,time_limit = None,questions = None,jumble = False):
@@ -152,8 +151,9 @@ class Section:
 		self.id = None
 		self.name = None
 		self.time_limit = None
-		self.questions = []
+		self.questions = None
 		self.jumble = jumble
+		self.removequestionsbtn = None
 
 		self.frame = tk.Frame(self.root,highlightbackground="black",highlightthickness=1,)
 		self.sectionframe = tk.Frame(self.frame,highlightbackground="black",highlightthickness=1,)
@@ -178,9 +178,16 @@ class Section:
 			self.questions = list()
 			self.questions.append(Question(self.questionframe))
 			self.questions[len(self.questions)-1].Grid(len(self.questions)-1,0)
+
+			self.removequestionsbtn = list()
+			self.removequestionsbtn.append(tk.Button(self.questionframe,text="Remove",command=lambda i=len(self.questions):self.RemoveQuestions(i-1)))
+			self.removequestionsbtn[len(self.removequestionsbtn)-1].grid(row=len(self.questions)-1,column=1,sticky= tk.NW)
 		else:
 			self.questions.append(Question(self.questionframe))
 			self.questions[len(self.questions)-1].Grid(len(self.questions)-1,0)
+
+			self.removequestionsbtn.append(tk.Button(self.questionframe,text="Remove",command=lambda i=len(self.questions):self.RemoveQuestions(i-1)))
+			self.removequestionsbtn[len(self.removequestionsbtn)-1].grid(row=len(self.questions)-1,column=1,sticky= tk.NW)
 	
 
 	def IsJumbled(self,jumble = False):
@@ -198,6 +205,13 @@ class Section:
 		else:
 			print("Sections: None")
 
+	def RemoveQuestions(self,index=None):
+		if index is not None:
+			self.questions[index].Destroy()
+			self.removequestionsbtn[index].destroy()
+			del self.questions[index]
+			del self.removequestionsbtn[index]
+
 	def Grid(self,row=0,column=0):
 		self.sectionnamelbl.grid(row=0,column=0)
 		self.sectionametext.grid(row=0,column=1)
@@ -207,6 +221,15 @@ class Section:
 		self.sectionframe.grid(row=0,column=0,pady=10,padx=10)
 		self.questionframe.grid(row=1,column=0,pady=10)
 		self.frame.grid(row=row,column=column,pady=10,padx=10)
+
+	def Export(self):
+		data = {}
+		data["section name"] = self.name
+		data["questions"] = []
+		if self.questions is not None:
+			for i in self.questions:
+				data["questions"].append(i.Export())
+		return data
 
 class Test:
 	def __init__(self,root,name = None,time_limit = None):
@@ -271,14 +294,11 @@ class Test:
 
 	def Export(self):
 		data = {}
-		data["test name"] = "sample test name"
-		data["sections"] = [0]
-		data["sections"][0] = {"section name" : "sample section name","questions" : [0]}
-		data["sections"][0]["questions"][0] = {"question name":"sample question name","options":[0,1,2,3]}
-		data["sections"][0]["questions"][0]["options"][0] = "sample option 1"
-		data["sections"][0]["questions"][0]["options"][1] = "sample option 2"
-		data["sections"][0]["questions"][0]["options"][2] = "sample option 3"
-		data["sections"][0]["questions"][0]["options"][3] = "sample option 4"
+		data["test name"] = self.name
+		data["sections"] = []
+		if self.sections is not None:
+			for i in self.sections:
+			    data["sections"].append(i.Export())
 		file = open("data.json","w")
 		json.dump(data,file)
 
@@ -298,4 +318,3 @@ window.geometry("1024x768+10+10")
 T = Test(window)
 T.Grid()
 window.mainloop()
-
