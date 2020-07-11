@@ -162,7 +162,7 @@ class Section:
 		self.sectionnamelbl = tk.Label(self.sectionframe,text="Section Name")
 		self.sectionametext= tk.Text(self.sectionframe,height="2")
 		self.sectionbtnframe = tk.Frame(self.sectionframe,)
-		self.sectionremovebtn = tk.Button(self.sectionbtnframe,text="Remove",command=lambda:self.frame.destroy())
+		#self.sectionremovebtn = tk.Button(self.sectionbtnframe,text="Remove",command=lambda:self.frame.destroy())
 		self.addquestionbtn = tk.Button(self.sectionbtnframe,text="Add Question",command=self.AddQuestion)
 
 	def SetName(self,name=None):
@@ -180,13 +180,13 @@ class Section:
 			self.questions[len(self.questions)-1].Grid(len(self.questions)-1,0)
 
 			self.removequestionsbtn = list()
-			self.removequestionsbtn.append(tk.Button(self.questionframe,text="Remove",command=lambda i=len(self.questions):self.RemoveQuestions(i-1)))
+			self.removequestionsbtn.append(tk.Button(self.questionframe,text="Remove",command=lambda i=len(self.questions):self.RemoveQuestion(i-1)))
 			self.removequestionsbtn[len(self.removequestionsbtn)-1].grid(row=len(self.questions)-1,column=1,sticky= tk.NW)
 		else:
 			self.questions.append(Question(self.questionframe))
 			self.questions[len(self.questions)-1].Grid(len(self.questions)-1,0)
 
-			self.removequestionsbtn.append(tk.Button(self.questionframe,text="Remove",command=lambda i=len(self.questions):self.RemoveQuestions(i-1)))
+			self.removequestionsbtn.append(tk.Button(self.questionframe,text="Remove",command=lambda i=len(self.questions):self.RemoveQuestion(i-1)))
 			self.removequestionsbtn[len(self.removequestionsbtn)-1].grid(row=len(self.questions)-1,column=1,sticky= tk.NW)
 	
 
@@ -205,18 +205,21 @@ class Section:
 		else:
 			print("Sections: None")
 
-	def RemoveQuestions(self,index=None):
+	def RemoveQuestion(self,index=None):
 		if index is not None:
 			self.questions[index].Destroy()
 			self.removequestionsbtn[index].destroy()
 			del self.questions[index]
 			del self.removequestionsbtn[index]
 
+	def Destroy(self):
+		self.frame.destroy()
+
 	def Grid(self,row=0,column=0):
 		self.sectionnamelbl.grid(row=0,column=0)
 		self.sectionametext.grid(row=0,column=1)
 		self.sectionbtnframe.grid(row=0,column=2)
-		self.sectionremovebtn.grid(row=0,column=0)
+		#self.sectionremovebtn.grid(row=0,column=0)
 		self.addquestionbtn.grid(row=1,column=0)
 		self.sectionframe.grid(row=0,column=0,pady=10,padx=10)
 		self.questionframe.grid(row=1,column=0,pady=10)
@@ -224,7 +227,7 @@ class Section:
 
 	def Export(self):
 		data = {}
-		data["section name"] = self.name
+		data["section"] = self.name
 		data["questions"] = []
 		if self.questions is not None:
 			for i in self.questions:
@@ -236,6 +239,7 @@ class Test:
 		self.root = root
 		self.name = name
 		self.sections = None
+		self.removesectionsbtn = None
 		self.time_limit = time_limit
 
 		self.frame  = tk.Frame(root,highlightbackground="black",highlightthickness=1,)
@@ -248,7 +252,7 @@ class Test:
 
 		self.testbtnframe = tk.Frame(self.testframe,)
 		self.addsectionbtn = tk.Button(self.testbtnframe,text="Add Section",command=self.AddSection)
-		self.testremovebtn = tk.Button(self.testbtnframe,text="Remove",command=lambda:self.frame.destroy())
+		#self.testremovebtn = tk.Button(self.testbtnframe,text="Remove",command=lambda:self.frame.destroy())
 		self.savebtn = tk.Button(self.testbtnframe,text="Save",command=self.Export)
 
 	def SetName(self,name = None):
@@ -260,9 +264,16 @@ class Test:
 			self.sections = list()
 			self.sections.append(Section(self.sectionframe))
 			self.sections[len(self.sections)-1].Grid(len(self.sections)-1,0)
+
+			self.removesectionsbtn = list()
+			self.removesectionsbtn.append(tk.Button(self.sectionframe,text="Remove",command=lambda i=len(self.sections): self.RemoveSection(i-1)))
+			self.removesectionsbtn[len(self.removesectionsbtn)-1].grid(row=len(self.sections)-1,column=1,sticky=tk.NW)
 		else:
 			self.sections.append(Section(self.sectionframe))
 			self.sections[len(self.sections)-1].Grid(len(self.sections)-1,0)
+
+			self.removesectionsbtn.append(tk.Button(self.sectionframe,text="Remove",command=lambda i=len(self.sections): self.RemoveSection(i-1)))
+			self.removesectionsbtn[len(self.sections)-1].grid(row=len(self.sections)-1,column=1,sticky=tk.NW)
 		
 	def Show(self):
 		print("Test")
@@ -282,19 +293,26 @@ class Test:
 		self.testnametext.grid(row=0,column=1)
 		#self.testtimelimit.pack()
 		self.addsectionbtn.grid(row=0,column=0)
-		self.testremovebtn.grid(row=1,column=0)
+		#self.testremovebtn.grid(row=1,column=0)
 		self.savebtn.grid(row=2,column=0)
 		self.testbtnframe.grid(row=0,column=2)
 		self.testframe.grid(row = 0,column = 0)
 		self.sectionframe.grid(row = 1,column = 0)
 		self.frame.grid(row=row,column=column,pady=10)
 
+	def RemoveSection(self,index=None):
+		if index is not None:
+			self.sections[index].Destroy()
+			self.removesectionsbtn[index].destroy()
+			del self.sections[index]
+			del self.removesectionsbtn[index]
+
 	def Destroy(self):
 		pass
 
 	def Export(self):
 		data = {}
-		data["test name"] = self.name
+		data["test"] = self.name
 		data["sections"] = []
 		if self.sections is not None:
 			for i in self.sections:
