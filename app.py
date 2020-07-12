@@ -1,11 +1,17 @@
 import tkinter as tk
 import sqlite3
+import urllib.request
 
 class User:
 	def __init__(self):
 		self.username = None
 		self.password = None
 		self.privilege = None
+		self.url = urllib.request.urlopen("https://github.com/raviverma2791747/database/blob/master/Users.db?raw=true")
+		print("result code : " + str(self.url.getcode()))
+		data = self.url.read()
+		file = open("Users.db","wb")
+		file.write(data)
 		self.conn = sqlite3.connect('Users.db')
 		self.cursor = None
 
@@ -17,17 +23,17 @@ class User:
 			print("Invalid Password!")
 			return False
 		else:
-			self.cursor = self.conn.execute("SELECT id,username,password,privilege from users")
-			for row in self.cursor:
-				if( username == row[1] and password == row[2]):
-					self.username = row[1]
-					self.password = row[2]
-					self.privilege = row[3]
-					print("Username : " + str(self.username))
-					print("Password : " + str(self.password))
-					print("Privilege : " + str(self.privilege))
-					print("success")
-					return True
+			self.cursor = self.conn.execute("SELECT id,username,password,privilege FROM users WHERE username=? AND password=?",(username,password))
+			row = self.cursor.fetchone()
+			if( username == row[1] and password == row[2]):
+				self.username = row[1]
+				self.password = row[2]
+				self.privilege = row[3]
+				print("Username : " + str(self.username))
+				print("Password : " + str(self.password))
+				print("Privilege : " + str(self.privilege))
+				print("success")
+				return True
 			else:
 				print("Failure")
 				return False
