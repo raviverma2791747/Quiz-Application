@@ -1,18 +1,19 @@
 import tkinter as tk
 import sqlite3
 import urllib.request
+import json
 
 class User:
 	def __init__(self):
 		self.username = None
 		self.password = None
 		self.privilege = None
-		self.url = urllib.request.urlopen("https://github.com/raviverma2791747/database/blob/master/Users.db?raw=true")
+		self.url = urllib.request.urlopen("https://github.com/raviverma2791747/database/blob/master/Quiz.db?raw=true")
 		print("result code : " + str(self.url.getcode()))
 		data = self.url.read()
-		file = open("Users.db","wb")
+		file = open("Quiz.db","wb")
 		file.write(data)
-		self.conn = sqlite3.connect('Users.db')
+		self.conn = sqlite3.connect('Quiz.db')
 		self.cursor = None
 
 	def Login(self,username,password):
@@ -72,18 +73,58 @@ class LoginWindow:
 		if self.user.Login(self.uentry.get(),self.pentry.get()) is True:
 			self.window.destroy()
 
+class Quiz:
+	def __init__(self,root):
+		self.root = root
+		self.frame = tk.Frame(self.root)
+		self.file = open("data.json","r")
+		self.data = json.loads(self.file.read())
+		lbl = tk.Label(self.frame,text=self.data["test"])
+		lbl.grid(row=0,column=0)
+		for section in self.data["sections"]:
+			lbls = tk.Label(self.frame,text=section["section"])
+			lbls.grid(row=1,column=0)
+		self.frame.grid(row=0,column=0)
+
+
+		
+class QuizMenu:
+	def __init__(self,root,user):
+		self.root = root
+		self.frame = tk.Frame(self.root,)
+		self.user = user
+		self.conn = sqlite3.connect("../Quiz.db")
+		self.cursor = self.conn.execute("SELECT * FROM quizzes")
+		self.quizzes = self.cursor.fetchall()
+		self.Menu()
+		self.frame.grid(row=0,column=0)
+	
+	def Menu(self):
+		if len(self.quizzes) == 0:
+			lbl = tk.Label(self.frame,text="No Quizzes Available!")
+			lbl.grid(row=0,column=0)
+		for i in range(0,len(self.quizzes)):
+			btn = tk.Button(self.frame,text=self.quizzes[i][2],)
+			btn.grid(row=i,column=0)
+
 class Application:
 	def __init__(self,user):
 		self.window = tk.Tk()
 		self.window.title("Quiz App")
 		self.window.geometry("1024x768")
 		self.user = user
-
+		self.quizmenu = None 
+		if self.user.GetPrivilege() == 0:
+			QuizMenu(self.window,self.user)
 	def Run(self):
 		self.window.mainloop()
 
-U = User()
+'''U = User()
 L = LoginWindow(U) 
 L.Run()
 A = Application(U)
-A.Run()
+A.Run()'''
+
+window = tk.Tk()
+q = Quiz(window)
+window.mainloop()
