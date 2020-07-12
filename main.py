@@ -124,6 +124,9 @@ class Question:
 			self.removeoptionsbtn[index].destroy()
 			del self.options[index]
 			del	self.removeoptionsbtn[index]
+			for i in range(0,len(self.options)):
+				self.removeoptionsbtn[i].config(command=lambda: self.RemoveOption(i))
+
 
 	def Grid(self,row=0,column=0):
 		self.questiontxtlbl.grid(row=0,column=0)
@@ -211,6 +214,8 @@ class Section:
 			self.removequestionsbtn[index].destroy()
 			del self.questions[index]
 			del self.removequestionsbtn[index]
+			for i in range(0,len(self.questions)):
+				self.removequestionsbtn[i].config(command=lambda:self.RemoveQuestion(i))
 
 	def Destroy(self):
 		self.frame.destroy()
@@ -242,7 +247,7 @@ class Test:
 		self.removesectionsbtn = None
 		self.time_limit = time_limit
 
-		self.frame  = tk.Frame(root,highlightbackground="black",highlightthickness=1,)
+		self.frame  = tk.Frame(self.root,highlightbackground="black",highlightthickness=1,)
 		self.testframe  = tk.Frame(self.frame,highlightbackground="black",highlightthickness=1,)
 		self.sectionframe = tk.Frame(self.frame,)
 
@@ -252,8 +257,8 @@ class Test:
 
 		self.testbtnframe = tk.Frame(self.testframe,)
 		self.addsectionbtn = tk.Button(self.testbtnframe,text="Add Section",command=self.AddSection)
-		#self.testremovebtn = tk.Button(self.testbtnframe,text="Remove",command=lambda:self.frame.destroy())
 		self.savebtn = tk.Button(self.testbtnframe,text="Save",command=self.Export)
+		self.scrollbar = tk.Scrollbar(self.root,orient="vertical",)
 
 	def SetName(self,name = None):
 		if name is not None:
@@ -293,11 +298,11 @@ class Test:
 		self.testnametext.grid(row=0,column=1)
 		#self.testtimelimit.pack()
 		self.addsectionbtn.grid(row=0,column=0)
-		#self.testremovebtn.grid(row=1,column=0)
 		self.savebtn.grid(row=2,column=0)
 		self.testbtnframe.grid(row=0,column=2)
-		self.testframe.grid(row = 0,column = 0)
+		self.testframe.grid(row = 0,column = 0,sticky=tk.NW)
 		self.sectionframe.grid(row = 1,column = 0)
+		self.scrollbar.grid(row=row,column=column+1,sticky=tk.NW,)
 		self.frame.grid(row=row,column=column,pady=10)
 
 	def RemoveSection(self,index=None):
@@ -306,6 +311,8 @@ class Test:
 			self.removesectionsbtn[index].destroy()
 			del self.sections[index]
 			del self.removesectionsbtn[index]
+			for i in range(0,len(self.sections)):
+				self.removesectionsbtn[i].config(command=lambda:self.RemoveSection(i))
 
 	def Destroy(self):
 		pass
@@ -329,6 +336,7 @@ class QuizEditor:
 		self.test = Test(self.contentframe)
 		self.contentframe.grid(row = 0 , column = 0)
 		self.mainframe.pack(expand=True,fill="both",side = tk.LEFT)
+
 
 window = tk.Tk()
 window.title("Quiz App")
