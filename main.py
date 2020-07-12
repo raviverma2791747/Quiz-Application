@@ -36,6 +36,12 @@ class Option:
 		data["option"] = self.optiontxt.get("1.0","end")
 		return data
 
+	def TestView(self):
+		img1 = tk.PhotoImage(file='unchecked.png')
+		img2 = tk.PhotoImage(file='checked.png')
+		R = tk.Checkbutton(self.root,image=img1, compound='left',selectimage=img2).grid(row=0,column=0,)
+		self.optiontxt.grid(row=0,column=1)
+
 class Question:
 	def __init__(self,root,options=None,keys=None,time_limit=None,note=None,answer=None,jumble=None,responses=None):
 		self.root = root 
@@ -134,7 +140,7 @@ class Question:
 		self.quesbtnframe.grid(row=0,column=2)
 		self.questionsavebtn.grid(row=0,column=0,)
 		self.addoptionsbtn.grid(row=2,column=0)
-		self.frame.grid(row=row,column=column,pady=10,)
+		self.frame.grid(row=row,column=column,pady=10,padx=30)
 
 	def Destroy(self):
 		self.frame.destroy()
@@ -158,7 +164,7 @@ class Section:
 		self.jumble = jumble
 		self.removequestionsbtn = None
 
-		self.frame = tk.Frame(self.root,highlightbackground="black",highlightthickness=1,)
+		self.frame = tk.Frame(self.root,)
 		self.sectionframe = tk.Frame(self.frame,highlightbackground="black",highlightthickness=1,)
 		self.questionframe = tk.Frame(self.frame,)
 
@@ -227,8 +233,8 @@ class Section:
 		#self.sectionremovebtn.grid(row=0,column=0)
 		self.addquestionbtn.grid(row=1,column=0)
 		self.sectionframe.grid(row=0,column=0,pady=10,padx=10)
-		self.questionframe.grid(row=1,column=0,pady=10)
-		self.frame.grid(row=row,column=column,pady=10,padx=10)
+		self.questionframe.grid(row=1,column=0,padx=10,pady=10)
+		self.frame.grid(row=row,column=column,sticky=tk.NW)
 
 	def Export(self):
 		data = {}
@@ -247,7 +253,14 @@ class Test:
 		self.removesectionsbtn = None
 		self.time_limit = time_limit
 
-		self.frame  = tk.Frame(self.root,highlightbackground="black",highlightthickness=1,)
+		self.wrapperframe = tk.Frame(self.root,)
+		self.canvas = tk.Canvas(self.wrapperframe,)
+		self.yscollbar = tk.Scrollbar(self.wrapperframe,orient="vertical",command=self.canvas.yview)
+
+		self.canvas.configure(yscrollcommand=self.yscollbar.set)
+		self.canvas.bind("<Configure>",lambda e:self.canvas.configure(scrollregion = self.canvas.bbox("all")))
+
+		self.frame  = tk.Frame(self.canvas,)
 		self.testframe  = tk.Frame(self.frame,highlightbackground="black",highlightthickness=1,)
 		self.sectionframe = tk.Frame(self.frame,)
 
@@ -258,7 +271,6 @@ class Test:
 		self.testbtnframe = tk.Frame(self.testframe,)
 		self.addsectionbtn = tk.Button(self.testbtnframe,text="Add Section",command=self.AddSection)
 		self.savebtn = tk.Button(self.testbtnframe,text="Save",command=self.Export)
-		self.scrollbar = tk.Scrollbar(self.root,orient="vertical",)
 
 	def SetName(self,name = None):
 		if name is not None:
@@ -302,8 +314,12 @@ class Test:
 		self.testbtnframe.grid(row=0,column=2)
 		self.testframe.grid(row = 0,column = 0,sticky=tk.NW)
 		self.sectionframe.grid(row = 1,column = 0)
-		self.scrollbar.grid(row=row,column=column+1,sticky=tk.NW,)
-		self.frame.grid(row=row,column=column,pady=10)
+		#self.canvas.pack(side=tk.LEFT,fill="both",expand="yes")
+		#self.yscollbar.pack(side=tk.RIGHT,fill="y")
+		self.canvas.pack(side=tk.LEFT,fill="both",expand="yes")
+		self.yscollbar.pack(side=tk.LEFT,fill="y",)
+		self.canvas.create_window((0,0),window=self.frame,width=1050,anchor="nw")
+		self.wrapperframe.pack(fill="both",expand="yes",padx=10,pady=10)
 
 	def RemoveSection(self,index=None):
 		if index is not None:
@@ -341,6 +357,6 @@ class QuizEditor:
 window = tk.Tk()
 window.title("Quiz App")
 window.geometry("1024x768+10+10")
-T = Test(window)
-T.Grid()
+O = Option(window)
+O.TestView()
 window.mainloop()
