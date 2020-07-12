@@ -1,10 +1,13 @@
 import tkinter as tk
+import sqlite3
 
 class User:
 	def __init__(self):
-		self.username = "ravi"
-		self.password = "ok"
-		self.privilege = "admin"
+		self.username = None
+		self.password = None
+		self.privilege = None
+		self.conn = sqlite3.connect('Users.db')
+		self.cursor = None
 
 	def Login(self,username,password):
 		if username == "":
@@ -14,9 +17,17 @@ class User:
 			print("Invalid Password!")
 			return False
 		else:
-			if( username == self.username and password == self.password):
-				print("success")
-				return True
+			self.cursor = self.conn.execute("SELECT id,username,password,privilege from users")
+			for row in self.cursor:
+				if( username == row[1] and password == row[2]):
+					self.username = row[1]
+					self.password = row[2]
+					self.privilege = row[3]
+					print("Username : " + str(self.username))
+					print("Password : " + str(self.password))
+					print("Privilege : " + str(self.privilege))
+					print("success")
+					return True
 			else:
 				print("Failure")
 				return False
