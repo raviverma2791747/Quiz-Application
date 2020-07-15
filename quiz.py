@@ -133,27 +133,27 @@ class Test:
 		if data is not None:
 			for i in range(0,len(data["sections"])):
 				self.sections.append(Section(self.frame,data["sections"][i]))
-				if i == 0:
-					self.sections[i].Grid(row=1,column=0,)
-		self.prevbtn = tk.Button(self.frame,text="Previous Section",font=MEDIUM_FONT)
+				print(i)
+		self.sections[0].Grid(row=1,column=0,)
+		self.prevbtn = tk.Button(self.frame,text="Previous Section",font=MEDIUM_FONT,command=self.Back)
 		self.prevbtn.grid(row=2,column=0,sticky=tk.NW)
-		self.nextbtn =tk.Button(self.frame,text="Next Section",font=MEDIUM_FONT)
+		self.nextbtn =tk.Button(self.frame,text="Next Section",font=MEDIUM_FONT,command=self.Next)
 		self.nextbtn.grid(row=2,column=1,sticky=tk.NW)
 			
-	def Pack(self):
-		self.frame.grid(row=0,column=0)
+	def Grid(self,row=0,column=0):
+		self.frame.grid(row=row,column=column)
 
 	def Next(self):
 		if self.currsection < len(self.sections)-1:
-			self.sections[i].Hide()
+			self.sections[self.currsection].Hide()
 			self.currsection += 1
-			self.sections[i].Grid(row=1,column=0,)
+			self.sections[self.currsection].Grid(row=1,column=0,)
 
 	def Back(self):
 		if self.currsection > 0 :
-			self.sections[i].Hide()
+			self.sections[self.currsection].Hide()
 			self.currsection -= 1
-			self.sections[i].Grid(row=1,column=0,)
+			self.sections[self.currsection].Grid(row=1,column=0,)
 
 class Quiz:
 	def __init__(self,root):
@@ -187,7 +187,7 @@ window.title("Quiz App")
 file = open("quiz.json","r")
 data = json.loads(file.read())
 T = Test(window,data)
-T.Pack()
+T.Grid()
 window.mainloop()
 
 		
