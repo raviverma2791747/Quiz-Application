@@ -4,10 +4,10 @@ import json
 import sqlite3
 
 class Option:
-	def __init__(self,root,data=None):
+	def __init__(self,root,data=None,):
 		self.root = root 
 		self.text = tk.StringVar() 
-		self.id = None
+		self._id = None
 
 		self.optiontxtlbl = tk.Label(self.root,text="Option")
 		self.optiontxt = tk.Text(self.root,height=1)
@@ -15,7 +15,7 @@ class Option:
 		if data is not None:
 			if data["option"] is not None:
 				self.optiontxt.insert(tk.INSERT,data["option"])
-
+			
 	def Grid(self,row=0,column=0):
 		self.optiontxtlbl.grid(row=row,column=column,)
 		self.optiontxt.grid(row=row,column=column+1)
@@ -29,8 +29,11 @@ class Option:
 		data["option"] = self.optiontxt.get("1.0","end")
 		return data
 
+	def View(self):
+		pass
+
 class Question:
-	def __init__(self,root,data=None):
+	def __init__(self,root,data=None,):
 		self.root = root 
 		self.id = None
 		self.options = None
@@ -46,14 +49,14 @@ class Question:
 		self.questiontxtlbl = tk.Label(self.frame,text="Question")
 		self.questiontxt = tk.Text(self.frame,height=2)
 		self.quesbtnframe = tk.Frame(self.frame,)
-		self.addoptionsbtn = tk.Button(self.quesbtnframe,text="Add Option",command=self.AddOption)
+		self.addoptionsbtn = tk.Button(self.quesbtnframe,text="Add Option",command=self.AddOption)		
 
 		if data is not None:
-			if data["question"] is not None:
-				self.questiontxt.insert(tk.INSERT,data["question"])
-				for i in range(0,len(data["options"])):
-					self.AddOption(data["options"][i])
-		
+				if data["question"] is not None:
+					self.questiontxt.insert(tk.INSERT,data["question"])
+					for i in range(0,len(data["options"])):
+						self.AddOption(data["options"][i])
+
 	def AddOption(self,data=None):
 		if self.options is None:
 			self.options = list()
@@ -207,7 +210,7 @@ class Section:
 		return data
 
 class Test:
-	def __init__(self,root,data=None,_id=None,name=None,path=None,):
+	def __init__(self,root,data=None,_id=None,name=None,path=None):
 		self.root = root
 		self._id = _id
 		self.name = name
@@ -393,6 +396,8 @@ class QuizEditor:
 				self.test.Export()
 
 	def Exit(self):
+		if self.test is not None:
+			self.Save()
 		self.root.destroy()
 
 	def SaveDialog(self):
@@ -404,11 +409,9 @@ class QuizEditor:
 		self.test.Destroy()
 		self.test = None
 		self.savedialog.destroy()
-
+	
 window = tk.Tk()
 window.geometry("1024x768")
-window.title("QuizEditor")
-
-QE = QuizEditor(window)
-
+window.title("Quiz App")
+Q =  QuizEditor(window)
 window.mainloop()
