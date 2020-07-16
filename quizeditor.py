@@ -1,5 +1,7 @@
 import tkinter as tk
 from tkinter import filedialog as fd 
+from tkcalendar import Calendar,DateEntry
+import datetime as dt
 import json
 import sqlite3
 
@@ -26,7 +28,7 @@ class Option:
 
 	def Export(self):
 		data = {}
-		data["option"] = self.optiontxt.get("1.0","end")
+		data["option"] = self.optiontxt.get("1.0","end").rstrip("\n")
 		return data
 
 	def View(self):
@@ -100,7 +102,7 @@ class Question:
 
 	def Export(self):
 		data = {}
-		data["question"] = self.questiontxt.get("1.0","end")
+		data["question"] = self.questiontxt.get("1.0","end").rstrip("\n")
 		data["options"] = []
 		if self.options is not None:
 			for i in self.options:
@@ -202,7 +204,7 @@ class Section:
 
 	def Export(self):
 		data = {}
-		data["section"] = self.sectionametext.get("1.0","end")
+		data["section"] = self.sectionametext.get("1.0","end").rstrip("\n")
 		data["questions"] = []
 		if self.questions is not None:
 			for i in self.questions:
@@ -219,29 +221,60 @@ class Test:
 		self.removesectionsbtn = None
 		self.time_limit = None
 
+		self.testdatevar = tk.IntVar()
+		self.testtimevar = tk.IntVar()
+		self.testtimelimitvar = tk.IntVar()
+
 		self.wrapperframe = tk.Frame(self.root,)
 		self.canvas = tk.Canvas(self.wrapperframe,)
 		self.yscollbar = tk.Scrollbar(self.wrapperframe,orient="vertical",command=self.canvas.yview)
 
 		self.canvas.configure(yscrollcommand=self.yscollbar.set)
 		self.canvas.bind("<Configure>",lambda e:self.canvas.configure(scrollregion = self.canvas.bbox("all")))
+		self.canvas.bind("")
 
 		self.frame  = tk.LabelFrame(self.canvas,)
 		self.testframe  = tk.Frame(self.frame,)
 		self.sectionframe = tk.LabelFrame(self.frame,)
 
-		self.testnamelabel = tk.Label(self.testframe,text="Test Name",)
+		self.testnamelabel = tk.Label(self.testframe,text="Quiz Name",)
 		self.testnametext = tk.Text(self.testframe,height=1)
-		self.testtimelimit = tk.Entry(self.testframe)
 
 		self.testbtnframe = tk.Frame(self.testframe,)
+		self.testtimelimitlbl = tk.Label(self.testbtnframe,text="Quiz Time Limit")
+		self.testtimelimitframe = tk.Frame(self.testbtnframe)
+		self.testtimelimithrlbl = tk.Label(self.testtimelimitframe,text="Hours")
+		self.testtimelimithrspnbox = tk. Spinbox(self.testtimelimitframe,from_=0,to=24,wrap=True,width=2,state="disabled")
+		self.testtimelimitminlbl = tk.Label(self.testtimelimitframe,text="Minutes")
+		self.testtimelimitminspnbox = tk. Spinbox(self.testtimelimitframe,from_=0,to=60,wrap=True,width=2,state="disabled")
+		#self.testtimelimitseclbl = tk.Label(self.testtimelimitframe,text="Seconds")
+		#self.testtimelimitsecspnbox = tk. Spinbox(self.testtimelimitframe,from_=0,to=60,wrap=True,width=2,state="disabled")
+		self.testtimelimitchkbtn = tk.Checkbutton(self.testbtnframe,variable=self.testtimelimitvar ,command=self.ToggleTimeLimit)
 		self.addsectionbtn = tk.Button(self.testbtnframe,text="Add Section",command=self.AddSection)
-
+		self.testtimelbl =tk.Label(self.testbtnframe,text="Quiz Time")
+		self.testdatelbl = tk.Label(self.testbtnframe,text="Quiz Date")
+		self.testtimeframe = tk.Frame(self.testbtnframe)
+		self.testtimehrlbl = tk.Label(self.testtimeframe,text="Hours")
+		self.testtimehrspnbox = tk. Spinbox(self.testtimeframe,from_=0,to=24,wrap=True,width=2,state="disabled")
+		self.testtimeminlbl = tk.Label(self.testtimeframe,text="Minutes")
+		self.testtimeminspnbox = tk. Spinbox(self.testtimeframe,from_=0,to=60,wrap=True,width=2,state="disabled")
+		#self.testtimeseclbl = tk.Label(self.testtimeframe,text="Seconds")
+		#self.testtimesecspnbox = tk. Spinbox(self.testtimeframe,from_=0,to=60,wrap=True,width=2,state="disabled")
+		self.testtimechkbtn = tk.Checkbutton(self.testbtnframe,variable=self.testtimevar,command=self.ToggleTime)
+		self.testdate = DateEntry(self.testbtnframe,width=30,bg="darkblue",fg="white",year=2020,mindate=dt.date.today(),state="disabled")
+		self.testdatechkbtn = tk.Checkbutton(self.testbtnframe,variable=self.testdatevar,command=self.ToggleDate)
 		if data is not None:
 			if data["test"] is not None:
 				self.testnametext.insert(tk.INSERT,data["test"])
 				for i in range(0,len(data["sections"])):
 					self.AddSection(data["sections"][i])
+			if data["date"] is not None:
+				if data["date"]["day"] == 0 and data["date"]["month"] == 0 and data["date"]["year"] == 0:
+					self.testdatevar.set(0)
+				else:
+					self.testdatevar.set(1)
+					self.testdate.configure(state="enabled")
+					self.testdate.set_date(dt.datetime(int(data["date"]["year"]),int(data["date"]["month"]),int(data["date"]["day"])))
 
 	def AddSection(self,data=None):
 		if self.sections is None:
@@ -268,8 +301,28 @@ class Test:
 	def Grid(self,row=0,column=0):
 		self.testnamelabel.grid(row=0,column=0)
 		self.testnametext.grid(row=0,column=1)
-		#self.testtimelimit.pack()
 		self.addsectionbtn.grid(row=0,column=0)
+		self.testtimelimitlbl.grid(row=3,column=0)
+		self.testtimelimithrlbl.grid(row=0,column=0)
+		self.testtimelimithrspnbox.grid(row=0,column=1)
+		self.testtimelimitminlbl.grid(row=0,column=2)
+		self.testtimelimitminspnbox.grid(row=0,column=3)
+		#self.testtimelimitseclbl.grid(row=0,column=4)
+		#self.testtimelimitsecspnbox.grid(row=0,column=5)
+		self.testtimelimitframe.grid(row=3,column=1)
+		self.testtimelimitchkbtn.grid(row=3,column=2)
+		self.testdatelbl.grid(row=1,column=0)
+		self.testdate.grid(row=1,column=1)
+		self.testdatechkbtn.grid(row=1,column=2)
+		self.testtimelbl.grid(row=2,column=0)
+		self.testtimehrlbl.grid(row=0,column=0)
+		self.testtimehrspnbox.grid(row=0,column=1)
+		self.testtimeminlbl.grid(row=0,column=2)
+		self.testtimeminspnbox.grid(row=0,column=3)
+		#self.testtimeseclbl.grid(row=0,column=4)
+		#self.testtimesecspnbox.grid(row=0,column=5)
+		self.testtimechkbtn.grid(row=2,column=2)
+		self.testtimeframe.grid(row=2,column=1)
 		self.testbtnframe.grid(row=0,column=2)
 		self.testframe.grid(row = 0,column = 0,sticky=tk.NW)
 		self.sectionframe.grid(row = 1,column = 0,padx = 70)
@@ -295,10 +348,50 @@ class Test:
 	def GetID(self):
 		return self._id
 
+	def ToggleTimeLimit(self):
+		if self.testtimelimitvar.get() == 0:
+			self.testtimelimithrspnbox.configure(state="disabled")
+			self.testtimelimitminspnbox.configure(state="disabled")
+			#self.testtimelimitsecspnbox.configure(state="disabled")
+		else:
+			self.testtimelimithrspnbox.configure(state="normal")
+			self.testtimelimitminspnbox.configure(state="normal")
+			#self.testtimelimitsecspnbox.configure(state="normal")
+
+	def ToggleTime(self):
+		if self.testtimevar.get() == 0:
+			self.testtimehrspnbox.configure(state="disabled")
+			self.testtimeminspnbox.configure(state="disabled")
+			#self.testtimesecspnbox.configure(state="disabled")
+		else:
+			self.testtimehrspnbox.configure(state="normal")
+			self.testtimeminspnbox.configure(state="normal")
+			#self.testtimesecspnbox.configure(state="normal")
+
+	def ToggleDate(self):
+		if self.testdatevar.get() == 0:
+			self.testdate.configure(state="disabled")
+		else:
+			self.testdate.configure(state="enabled")
+
 	def Export(self,savedialog=None):
 		if self.path and  self._id and self.name is not None:
 			data = {}
-			data["test"] = self.testnametext.get("1.0","end")
+			data["test"] = self.testnametext.get("1.0","end").rstrip("\n")
+			if self.testdatevar.get() == 0:
+				data["date"] = {"day":0,"month":0,"year":0,}
+			else:
+				date = str(self.testdate.get_date())
+				date = date.split("-")
+				data["date"] = {"day":date[2],"month":date[1],"year":date[0],}
+			if self.testtimevar.get() == 0:
+				data["time"] = {"hour":0 ,"minute": 0,"second":0,}
+			else:
+				data["time"] = {"hour":self.testtimehrspnbox.get() ,"minute": self.testtimeminspnbox.get(),"second":0,}
+			if self.testtimelimitvar.get() == 0:
+				data["time_limit"] = {"hour": 0, "minute": 0,"second":0,}
+			else:
+				data["time_limit"] = {"hour": self.testtimelimithrspnbox.get() , "minute": self.testtimelimitminspnbox.get(),"second":0,}
 			data["sections"] = []
 			if self.sections is not None:
 				for i in self.sections:

@@ -43,11 +43,51 @@ class RadioButton:
 				self.button.configure(image=self.checked)
 
 	def Grid(self,row=None,column=None):
-		if row and column is not None:
-			self.button.grid(row=row,column=column)
-		else:
-			self.button.grid(row=0,column=0)
+		self.button.grid(row=row,column=column)
 
+
+	def Pack(self):
+		self.button.pack()
+
+class CheckButton:
+	def __init__(self,root,_id=None,callback=None):
+		self.root = root
+		self.checked = tk.PhotoImage(file="resources/checked.png")
+		self.unchecked = tk.PhotoImage(file="resources/unchecked.png")
+		self.state = False
+		self._id = _id
+		self.button = tk.Button(self.root,image=self.unchecked,command=self.Toggle)
+		self.callback = callback
+
+	def Toggle(self):
+		if self.state is True:
+			self.state = False
+			if self.callback is not None:
+				self.callback(-1)
+			self.button.configure(image=self.unchecked)
+		else:
+			self.state = True
+			self.button.configure(image=self.checked)
+			if self.callback is not None:
+				self.callback(self._id)
+
+	def GetId(self):
+		return self._id
+
+	def GetState(self):
+		return self.state
+
+	def SetState(self,state=None):
+		if state is not None:
+			self.state = state
+			if state is False:
+				self.button.configure(image=self.unchecked)
+			else:
+				self.button.configure(image=self.checked)
+
+	def Grid(self,row=0,column=0):
+		self.button.grid(row=row,column=column)
+		
 	def Pack(self):
 		self.button.pack()
 
@@ -184,10 +224,14 @@ class Quiz:
 window = tk.Tk()
 window.geometry("1024x768")
 window.title("Quiz App")
-file = open("quiz.json","r")
+'''file = open("quiz.json","r")
 data = json.loads(file.read())
 T = Test(window,data)
-T.Grid()
+T.Grid()'''
+C = CheckButton(window,0)
+C1 = CheckButton(window,1)
+C.Pack()
+C1.Pack()
 window.mainloop()
 
 		
