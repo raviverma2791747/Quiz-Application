@@ -132,25 +132,22 @@ class Section:
 		self.frame = tk.Frame(self.root)
 		self.questions = []
 		self.sectionlbl = tk.Label(self.frame,text=data["section"],font=LARGE_FONT)
-		self.sectionlbl.grid(row=0,column=0,sticky=tk.NW)
 		self.currquestion = 0
 		if data is not None:
 			for i in range(0,len(data["questions"])):
 				self.questions.append(Question(self.frame,data["questions"][i]))
-				if i == 0:
-					self.questions[i].Grid(1,0)
+		self.prevbtn = tk.Button(self.frame,text="Back",font=MEDIUM_FONT,command=self.Back,)
+		self.nextbtn = tk.Button(self.frame,text="Next",font=MEDIUM_FONT,command=self.Next,)
 		if len(self.questions) == 1 or 0:
-			self.prevbtn = tk.Button(self.frame,text="Back",font=MEDIUM_FONT,command=self.Back,state="disabled")
-			self.prevbtn.grid(row=2,column=0,sticky=tk.NW)
-			self.nextbtn = tk.Button(self.frame,text="Next",font=MEDIUM_FONT,command=self.Next,state="disabled")
-			self.nextbtn.grid(row=2,column=1,sticky=tk.NW,)
-		else:
-			self.prevbtn = tk.Button(self.frame,text="Back",font=MEDIUM_FONT,command=self.Back)
-			self.prevbtn.grid(row=2,column=0,sticky=tk.NW)
-			self.nextbtn = tk.Button(self.frame,text="Next",font=MEDIUM_FONT,command=self.Next)
-			self.nextbtn.grid(row=2,column=1,sticky=tk.NW,)
+			self.prevbtn.configure(state="disabled")
+			self.nextbtn.configure(state="disabled")
 
 	def Grid(self,row=0,column=0):
+		self.sectionlbl.grid(row=0,column=0,sticky=tk.NW)
+		if len(self.questions) > 0:
+			self.questions[0].Grid(1,0)
+		self.prevbtn.grid(row=2,column=0,sticky=tk.NW)
+		self.nextbtn.grid(row=2,column=1,sticky=tk.NW,)
 		self.frame.grid(row=row,column=column,sticky=tk.NW)
 
 	def Next(self):
@@ -178,6 +175,7 @@ class Test:
 		self.timelimitlbl = None
 		self.sections = []
 		self.currsection = 0
+		self.instructionframe = None
 		if data is not None:
 			for i in range(0,len(data["sections"])):
 				self.sections.append(Section(self.frame,data["sections"][i]))
@@ -197,22 +195,21 @@ class Test:
 			else:
 				timestr = timestr+":0" + str(self.timelimit[2])
 			self.timelimitlbl = tk.Label(self.frame,text=timestr,font=LARGE_FONT)
-			self.timelimitlbl.grid(row=0,column=1,sticky=tk.NE)
-			self.timelimitlbl.after(1000,self.UpdateCountDownTimer)
-		if len(self.sections) != 0 :
-			self.sections[0].Grid(row=1,column=0,)
+		self.prevbtn = tk.Button(self.frame,text="Previous Section",font=MEDIUM_FONT,command=self.Back,)
+		self.nextbtn =tk.Button(self.frame,text="Next Section",font=MEDIUM_FONT,command=self.Next,)
 		if len(self.sections) == 0 or 1:
-			self.prevbtn = tk.Button(self.frame,text="Previous Section",font=MEDIUM_FONT,command=self.Back,state="disabled")
-			self.nextbtn =tk.Button(self.frame,text="Next Section",font=MEDIUM_FONT,command=self.Next,state="disabled")
-			self.prevbtn.grid(row=2,column=0,sticky=tk.NW)
-			self.nextbtn.grid(row=2,column=1,sticky=tk.NW)
-		else:
-			self.prevbtn = tk.Button(self.frame,text="Previous Section",font=MEDIUM_FONT,command=self.Back)
-			self.nextbtn =tk.Button(self.frame,text="Next Section",font=MEDIUM_FONT,command=self.Next)
-			self.prevbtn.grid(row=2,column=0,sticky=tk.NW)
-			self.nextbtn.grid(row=2,column=1,sticky=tk.NW)
+			self.prevbtn.configure(state="disabled")
+			self.nextbtn.configure(state="disabled")
+
 			
 	def Grid(self,row=0,column=0):
+		self.HideInstruction()
+		self.timelimitlbl.grid(row=0,column=1,sticky=tk.NE)
+		self.timelimitlbl.after(1000,self.UpdateCountDownTimer)
+		if len(self.sections) > 0 :
+			self.sections[0].Grid(row=1,column=0,)
+		self.prevbtn.grid(row=2,column=0,sticky=tk.NW)
+		self.nextbtn.grid(row=2,column=1,sticky=tk.NW)
 		self.frame.grid(row=row,column=column)
 
 	def Next(self):
@@ -258,6 +255,28 @@ class Test:
 			timestr = timestr+":0" + str(self.timelimit[2])
 		self.timelimitlbl.configure(text=timestr)
 
+	def Instruction(self,data=None,callback1=None,callback2=None):
+		self.instructionframe = tk.Frame(self.root)
+		testlbl = tk.Label(self.instructionframe,text=data["test"],font=LARGE_FONT)
+		instructionlbl = tk.Label(self.instructionframe,text="Instructions",font=LARGE_FONT)
+		instructiontxt = tk.Text(self.instructionframe,font=MEDIUM_FONT)
+		if "instructions" in data:
+			for i in range(0,len(data["instructions"])):
+				instructiontxt.insert(tk.INSERT,"• " + data["instructions"][i]["instruction"]+ "\n")
+		instructiontxt.configure(state="disabled")
+		instructionacceptbtn = tk.Button(self.instructionframe,text="Accept",font=MEDIUM_FONT,command=callback1)
+		instructiondeclinebtn = tk.Button(self.instructionframe,text="Decline",font=MEDIUM_FONT,command=callback2)
+		testlbl.grid(row=0,column=0,sticky="W",padx=200)
+		instructionlbl.grid(row=1,column=0,sticky="W",padx=200)
+		instructiontxt.grid(row=2,column=0,columnspan=2,padx=200,sticky="W")
+		instructionacceptbtn.grid(row=3,column=0,padx=200,sticky="W")
+		instructiondeclinebtn.grid(row=3,column=1,padx=200,sticky="E")
+		self.instructionframe.pack(expand=True,fill="both")
+
+	def HideInstruction(self):
+		self.instructionframe.pack_forget()
+
+
 class Quiz:
 	def __init__(self,root):
 		self.root = root
@@ -269,14 +288,19 @@ class Quiz:
 		self.menuframe.pack()
 
 	def Menu(self):
-		cursor =  self.conn.execute("SELECT * FROM quizzes")
-		row = cursor.fetchall()
-		label = tk.Label(self.menuframe,text="Quizzes Available!",font=("Verdana",50))
-		label.pack()
-		self.menubuttons = []
-		for i in range(0,len(row)):
-			self.menubuttons.append(tk.Button(self.menuframe,text=row[i][1],font=("Verdana",30),command=lambda j=i:self.Start(row[j])))
-			self.menubuttons[i].pack()
+		if self.menubuttons is None:
+			cursor =  self.conn.execute("SELECT * FROM quizzes")
+			row = cursor.fetchall()
+			label = tk.Label(self.menuframe,text="Quizzes Available!",font=("Verdana",50))
+			label.grid(row=0,column=0,sticky="W")
+			self.menubuttons = []
+			for i in range(0,len(row)):
+				self.menubuttons.append(tk.Button(self.menuframe,text=row[i][1],font=("Verdana",30),relief=tk.FLAT,command=lambda j=i:self.Start(row[j])))
+				self.menubuttons[i].grid(row=i+1,column=0,padx=10,sticky="W")
+			self.menuframe.pack()
+		else:
+			self.test.HideInstruction()
+			self.menuframe.pack()
 
 	def Start(self,row):
 		file = open(row[2],"r")
@@ -286,14 +310,15 @@ class Quiz:
 			return
 		self.test = Test(self.root,data)
 		self.menuframe.pack_forget()
-		self.test.Grid()
+		self.test.Instruction(data,self.test.Grid,self.Menu)
 	
-window = tk.Tk()
-window.geometry("1024x768")
-window.title("Quiz App")
-file = open("quiz.json","r")
-data = json.loads(file.read())
+if __name__ == "__main__" :
+	window = tk.Tk()
+	window.geometry("1024x768")
+	window.title("Quiz App")
+	#file = open("quiz.json","r")
+	#data = json.loads(file.read())
 
-Q =Quiz(window)
-window.mainloop()
+	Q =Quiz(window)
+	window.mainloop()
 		

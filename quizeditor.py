@@ -509,6 +509,7 @@ class QuizEditor:
 		self.root.configure(menu=self.menubar)
 
 		self.savedialog = None
+		#self.root.bind("<Destroy>",self.Save)
 
 	def About(self):
 		aboutwindow = tk.Toplevel(self.root)
@@ -583,8 +584,9 @@ class QuizEditor:
 		if self.savedialog is not None:
 			self.savedialog.destroy()
 	
-window = tk.Tk()
-window.geometry("1024x768")
-window.title("Quiz App")
-Q =  QuizEditor(window)
-window.mainloop()
+if __name__ == "__main__" :
+	window = tk.Tk()
+	window.geometry("1024x768")
+	window.title("Quiz App")
+	Q =  QuizEditor(window)
+	window.mainloop()
