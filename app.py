@@ -5,13 +5,20 @@ import quizeditor as QE
 import quiz as Q
 
 
+LARGE_FONT = ("Verdana",25)
+MEDIUM_FONT = ("Verdana",15)
+SMALL_FONT =("Verdana",13)
+VERY_SMALL_FONT = ("Verdana",8)
+
 class User:
-	def __init__(self):
-		self.username = None
-		self.password = None
-		self.privilege = None
+	def __init__(self,username=None,password=None,privilege=None):
+		self.username = username
+		self.password = password
+		self.privilege = privilege
 		self.conn = sqlite3.connect('Quiz.db')
 		self.cursor = None
+		self.root = None
+		self.frame = None
 
 	def Login(self,username,password):
 		if username == "":
@@ -35,6 +42,56 @@ class User:
 			else:
 				print("Failure")
 				return False
+
+	def DashBoard(self):
+		window =tk.Tk()
+		window.geometry("1024x768")
+		frame = tk.Frame(window)
+		userleftframe = tk.LabelFrame(frame,height=window.winfo_screenheight(),width=window.winfo_screenwidth()/20*6)
+		userdetailsframe = tk.LabelFrame(userleftframe,)
+
+		userrightframe =  tk.LabelFrame(frame,height=window.winfo_screenheight(),width=window.winfo_screenwidth()/20*14)
+		
+		usernamelbl = tk.Label(userdetailsframe,text="User Name :",font=SMALL_FONT)
+		usernamelbl.grid(row=0,column=0)
+		usernameentry = tk.Entry(userdetailsframe,width=16,font=SMALL_FONT,)
+		usernameentry.insert(tk.INSERT,self.username)
+		usernameentry.configure(state="disabled")
+		usernameentry.grid(row=0,column=1,)
+		usernameeditbtn = tk.Button(userdetailsframe,text="Edit",font=VERY_SMALL_FONT,command=lambda:usernameentry.configure(state="normal"))
+		usernameeditbtn.grid(row=0,column=2)
+		usernamesavebtn = tk.Button(userdetailsframe,text="Save",font=VERY_SMALL_FONT,command=lambda:usernameentry.configure(state="disabled"))
+		usernamesavebtn.grid(row=0,column=3)
+
+		passwordlbl =tk.Label(userdetailsframe,text="Password:",font=SMALL_FONT)
+		passwordlbl.grid(row=1,column=0)
+		passwordentry = tk.Entry(userdetailsframe,width=16,font=SMALL_FONT)
+		passwordentry.insert(tk.INSERT,self.password)
+		passwordentry.configure(state="disabled")
+		passwordentry.grid(row=1,column=1)
+		passwordviewbtn = tk.Button(userdetailsframe,text="View",font=VERY_SMALL_FONT)
+		passwordviewbtn.grid(row=1,column=2)
+		passwordeditbtn = tk.Button(userdetailsframe,text="Edit",font=VERY_SMALL_FONT)
+		passwordeditbtn.grid(row=1,column=3)
+		passwordsavebtn = tk.Button(userdetailsframe,text="Save",font=VERY_SMALL_FONT)
+		passwordsavebtn.grid(row=1,column=4)
+
+		privilegelbl =tk.Label(userdetailsframe,text="Role :",font=SMALL_FONT)
+		privilegelbl.grid(row=2,column=0)
+		privilege = None
+		if self.privilege == 0:
+			privilege = tk.Label(userdetailsframe,text="User",font=SMALL_FONT)
+		else:
+			privilege = tk.Label(userdetailsframe,text="User",font=SMALL_FONT)
+		privilege.grid(row=2,column=1)
+		userdetailsframe.grid(row=0,column=0,sticky="E")
+		userleftframe.grid(row=0,column=0)
+		userleftframe.grid_propagate(0)
+		userrightframe.grid(row=0,column=1)
+		userrightframe.grid_propagate(0)
+		frame.pack(fill="both",expand="true")
+		window.mainloop()
+
 
 	def GetPrivilege(self):
 		return self.privilege
@@ -72,6 +129,7 @@ class LoginWindow:
 	def Submit(self):
 		if self.user.Login(self.uentry.get(),self.pentry.get()) is True:
 			self.window.destroy()
+			self.user.DashBoard()
 
 class QuizMenu:
 	def __init__(self,root,user):
@@ -82,14 +140,6 @@ class QuizMenu:
 		self.cursor = self.conn.execute("SELECT * FROM quizzes")
 		self.quizzes = self.cursor.fetchall()
 		self.Menu()
-		self.userframe = tk.LabelFrame(self.frame,)
-		self.ulabel = tk.Label(self.userframe,text="Username")
-		self.uvlabel = tk.Label(self.userframe,text=self.user.GetUsername())
-		self.privlabel = tk.Label(self.userframe,text="Privilege")
-		self.ulabel.grid(row=0,column=0)
-		self.uvlabel.grid(row=0,column=1)
-		self.privlabel.grid(row=1,column=0)
-		self.userframe.grid(row=0,column=0)
 		self.frame.grid(row=0,column=0)
 	
 	def Menu(self):
@@ -116,9 +166,12 @@ class Application:
 	def Run(self):
 		self.window.mainloop()
 
-U = User()
-L = LoginWindow(U) 
-L.Run()
-A = Application(U)
-A.Run()
+if __name__ == "__main__":
+	U = User("admin","password",0)
+	U.DashBoard()
+	#L = LoginWindow(U) 
+	#L.Run()
+	'''A = Application(U)
+	A.Run()'''
+
 
