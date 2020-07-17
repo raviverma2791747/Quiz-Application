@@ -1,6 +1,7 @@
 import tkinter as tk
 from tkinter import filedialog as fd 
 from tkcalendar import Calendar,DateEntry
+from tkinter import messagebox as mb
 import datetime as dt
 import json
 import sqlite3
@@ -15,7 +16,7 @@ class Option:
 		self.optiontxt = tk.Text(self.root,height=1)
 
 		if data is not None:
-			if data["option"] is not None:
+			if "option" in data:
 				self.optiontxt.insert(tk.INSERT,data["option"])
 			
 	def Grid(self,row=0,column=0):
@@ -54,7 +55,7 @@ class Question:
 		self.addoptionsbtn = tk.Button(self.quesbtnframe,text="Add Option",command=self.AddOption)		
 
 		if data is not None:
-				if data["question"] is not None:
+				if "question" in data:
 					self.questiontxt.insert(tk.INSERT,data["question"])
 					for i in range(0,len(data["options"])):
 						self.AddOption(data["options"][i])
@@ -130,7 +131,7 @@ class Section:
 		self.addquestionbtn = tk.Button(self.sectionbtnframe,text="Add Question",command=self.AddQuestion)
 
 		if data is not None:
-			if data["section"] is not None:
+			if "section" in data:
 				self.sectionametext.insert(tk.INSERT,data["section"])
 				for i in range(0,len(data["questions"])):
 					self.AddQuestion(data["questions"][i])
@@ -211,6 +212,34 @@ class Section:
 				data["questions"].append(i.Export())
 		return data
 
+class Instruction:
+	def __init__(self,data=None):
+		self.data = data
+
+	def Export(self):
+		data = {}
+		data["instructions"] = []
+		if "time_limit" in self.data:
+			if self.data["time_limit"]["hour"] == "0" and self.data["time_limit"]["minute"] == "0":
+				data["instructions"].append({"instruction":"There is no limit for the quiz.",})
+			else:
+				if self.data["time_limit"]["hour"] == "0" and self.data["time_limit"]["minute"] != "0" :
+					data["instructions"].append({"instruction":"You have " + self.data["time_limit"]["minute"] + " minutes", })
+				elif self.data["time_limit"]["hour"] != "0" and self.data["time_limit"]["minute"] == "0":
+					data["instructions"].append({"instruction":"You have " + self.data["time_limit"]["hour"] + " hours", })
+				else:
+					data["instructions"].append({"instruction":"You have " + self.data["time_limit"]["hour"] + " hours and " + self.data["time_limit"]["minute"] + " minutes", })
+		
+		if "sections" in self.data:
+			if len(self.data["sections"]) > 0:
+				data["instructions"].append({"instruction": "There are " + str(len(self.data["sections"])) + " sections in total",})
+				for i in range(0,len(self.data["sections"])):
+					if "questions" in self.data["sections"][i]:
+						if len(self.data["sections"][i]["questions"]) > 0 :
+							data["instructions"].append({"instruction":"In the section " + self.data["sections"][i]["section"] + " there are " + str(len(self.data["sections"][i]["questions"])) + " questions in total",})
+
+		return data
+
 class Test:
 	def __init__(self,root,data=None,_id=None,name=None,path=None):
 		self.root = root
@@ -220,6 +249,7 @@ class Test:
 		self.sections = None
 		self.removesectionsbtn = None
 		self.time_limit = None
+		self.instruction = None
 
 		self.testdatevar = tk.IntVar()
 		self.testtimevar = tk.IntVar()
@@ -246,7 +276,7 @@ class Test:
 		self.testtimelimithrlbl = tk.Label(self.testtimelimitframe,text="Hours")
 		self.testtimelimithrspnbox = tk. Spinbox(self.testtimelimitframe,from_=0,to=24,wrap=True,width=2,state="disabled")
 		self.testtimelimitminlbl = tk.Label(self.testtimelimitframe,text="Minutes")
-		self.testtimelimitminspnbox = tk. Spinbox(self.testtimelimitframe,from_=0,to=60,wrap=True,width=2,state="disabled")
+		self.testtimelimitminspnbox = tk. Spinbox(self.testtimelimitframe,from_=0,to=59,wrap=True,width=2,state="disabled")
 		#self.testtimelimitseclbl = tk.Label(self.testtimelimitframe,text="Seconds")
 		#self.testtimelimitsecspnbox = tk. Spinbox(self.testtimelimitframe,from_=0,to=60,wrap=True,width=2,state="disabled")
 		self.testtimelimitchkbtn = tk.Checkbutton(self.testbtnframe,variable=self.testtimelimitvar ,command=self.ToggleTimeLimit)
@@ -257,24 +287,46 @@ class Test:
 		self.testtimehrlbl = tk.Label(self.testtimeframe,text="Hours")
 		self.testtimehrspnbox = tk. Spinbox(self.testtimeframe,from_=0,to=24,wrap=True,width=2,state="disabled")
 		self.testtimeminlbl = tk.Label(self.testtimeframe,text="Minutes")
-		self.testtimeminspnbox = tk. Spinbox(self.testtimeframe,from_=0,to=60,wrap=True,width=2,state="disabled")
+		self.testtimeminspnbox = tk. Spinbox(self.testtimeframe,from_=0,to=59,wrap=True,width=2,state="disabled")
 		#self.testtimeseclbl = tk.Label(self.testtimeframe,text="Seconds")
 		#self.testtimesecspnbox = tk. Spinbox(self.testtimeframe,from_=0,to=60,wrap=True,width=2,state="disabled")
 		self.testtimechkbtn = tk.Checkbutton(self.testbtnframe,variable=self.testtimevar,command=self.ToggleTime)
 		self.testdate = DateEntry(self.testbtnframe,width=30,bg="darkblue",fg="white",year=2020,mindate=dt.date.today(),state="disabled")
 		self.testdatechkbtn = tk.Checkbutton(self.testbtnframe,variable=self.testdatevar,command=self.ToggleDate)
 		if data is not None:
-			if data["test"] is not None:
+			if "test" in data:
 				self.testnametext.insert(tk.INSERT,data["test"])
 				for i in range(0,len(data["sections"])):
 					self.AddSection(data["sections"][i])
-			if data["date"] is not None:
-				if data["date"]["day"] == 0 and data["date"]["month"] == 0 and data["date"]["year"] == 0:
+			if "date" in data:
+				if data["date"]["day"] == "0" and data["date"]["month"] == "0" and data["date"]["year"] == "0":
 					self.testdatevar.set(0)
 				else:
 					self.testdatevar.set(1)
 					self.testdate.configure(state="enabled")
 					self.testdate.set_date(dt.datetime(int(data["date"]["year"]),int(data["date"]["month"]),int(data["date"]["day"])))
+			if "time" in data:
+				if data["time"]["hour"] == "0" and data["time"]["minute"] == "0":
+					self.testtimevar.set(0)
+				else:
+					self.testtimevar.set(1)
+					self.testtimehrspnbox.configure(state="normal")
+					self.testtimehrspnbox.delete(0,"end")
+					self.testtimehrspnbox.insert(tk.INSERT,data["time"]["hour"])
+					self.testtimeminspnbox.configure(state="normal")
+					self.testtimeminspnbox.delete(0,"end")
+					self.testtimeminspnbox.insert(tk.INSERT,data["time"]["minute"])
+			if "time_limit" in data:
+				if data["time_limit"]["hour"] == "0" and data["time_limit"]["minute"] == "0":
+					self.testtimelimitvar.set(0)
+				else:
+					self.testtimelimitvar.set(1)
+					self.testtimelimithrspnbox.configure(state="normal")
+					self.testtimelimithrspnbox.delete(0,"end")
+					self.testtimelimithrspnbox.insert(tk.INSERT,data["time_limit"]["hour"])
+					self.testtimelimitminspnbox.configure(state="normal")
+					self.testtimelimitminspnbox.delete(0,"end")
+					self.testtimelimitminspnbox.insert(tk.INSERT,data["time_limit"]["minute"])
 
 	def AddSection(self,data=None):
 		if self.sections is None:
@@ -379,23 +431,25 @@ class Test:
 			data = {}
 			data["test"] = self.testnametext.get("1.0","end").rstrip("\n")
 			if self.testdatevar.get() == 0:
-				data["date"] = {"day":0,"month":0,"year":0,}
+				data["date"] = {"day":"0","month":"0","year":"0",}
 			else:
 				date = str(self.testdate.get_date())
 				date = date.split("-")
 				data["date"] = {"day":date[2],"month":date[1],"year":date[0],}
 			if self.testtimevar.get() == 0:
-				data["time"] = {"hour":0 ,"minute": 0,"second":0,}
+				data["time"] = {"hour":"0" ,"minute": "0","second":"0",}
 			else:
-				data["time"] = {"hour":self.testtimehrspnbox.get() ,"minute": self.testtimeminspnbox.get(),"second":0,}
+				data["time"] = {"hour":self.testtimehrspnbox.get() ,"minute": self.testtimeminspnbox.get(),"second":"0",}
 			if self.testtimelimitvar.get() == 0:
-				data["time_limit"] = {"hour": 0, "minute": 0,"second":0,}
+				data["time_limit"] = {"hour": "0", "minute": "0","second":"0",}
 			else:
-				data["time_limit"] = {"hour": self.testtimelimithrspnbox.get() , "minute": self.testtimelimitminspnbox.get(),"second":0,}
+				data["time_limit"] = {"hour": self.testtimelimithrspnbox.get() , "minute": self.testtimelimitminspnbox.get(),"second":"0",}
 			data["sections"] = []
 			if self.sections is not None:
 				for i in self.sections:
 					data["sections"].append(i.Export())
+			I = Instruction(data)
+			data.update(I.Export())
 			file = open(self.path,"w")
 			json.dump(data,file)
 		else:
@@ -412,11 +466,28 @@ class Test:
 			self._id = cursor.fetchone()[0]
 			data = {}
 			data["test"] = self.testnametext.get("1.0","end")
+			if self.testdatevar.get() == 0:
+				data["date"] = {"day":"0","month":"0","year":"0",}
+			else:
+				date = str(self.testdate.get_date())
+				date = date.split("-")
+				data["date"] = {"day":date[2],"month":date[1],"year":date[0],}
+			if self.testtimevar.get() == 0:
+				data["time"] = {"hour":"0" ,"minute": "0","second":"0",}
+			else:
+				data["time"] = {"hour":self.testtimehrspnbox.get() ,"minute": self.testtimeminspnbox.get(),"second":"0",}
+			if self.testtimelimitvar.get() == 0:
+				data["time_limit"] = {"hour": "0", "minute": "0","second":"0",}
+			else:
+				data["time_limit"] = {"hour": self.testtimelimithrspnbox.get() , "minute": self.testtimelimitminspnbox.get(),"second":"0",}
 			data["sections"] = []
 			if self.sections is not None:
 				for i in self.sections:
 					data["sections"].append(i.Export())
+			I = Instruction(data)
+			data.update(I.Export())
 			savedialog.write(json.dumps(data))
+		mb.showinfo('Saved', "File has been saved successfully!")
 
 class QuizEditor:
 	def __init__(self,root):
@@ -453,7 +524,11 @@ class QuizEditor:
 		if self.test is None:
 			if _id and name and path is not None:
 				file = open(path,"r")
-				data = json.loads(file.read())
+				try :
+					data = json.loads(file.read())
+				except:
+					print("json file error")
+					return 
 				self.test = Test(self.root,data,_id,name,path)
 				self.openwindow.destroy()
 				self.openwindow = None
@@ -461,7 +536,9 @@ class QuizEditor:
 				self.test = Test(self.root,)
 			self.test.Grid()
 		else:
-			pass
+			self.Save()
+			self.DestroyTest()
+			self.New()
 
 	def Open(self):
 		if self.test is None:
@@ -476,10 +553,12 @@ class QuizEditor:
 			else:
 				self.openwindowbtns = []
 				for i in range(0,len(quizzes)):
-					self.openwindowbtns.append(tk.Button(self.openwindow,text=quizzes[i][1],command=lambda:self.New(quizzes[i][0],quizzes[i][1],quizzes[i][2])))
+					self.openwindowbtns.append(tk.Button(self.openwindow,text=quizzes[i][1],command=lambda j=i:self.New(quizzes[j][0],quizzes[j][1],quizzes[j][2])))
 					self.openwindowbtns[i].pack()
 		else:
 			self.Save()
+			self.DestroyTest()
+			self.Open()
 
 	def Save(self):
 		if self.test is not None:
@@ -501,7 +580,8 @@ class QuizEditor:
 	def DestroyTest(self):
 		self.test.Destroy()
 		self.test = None
-		self.savedialog.destroy()
+		if self.savedialog is not None:
+			self.savedialog.destroy()
 	
 window = tk.Tk()
 window.geometry("1024x768")

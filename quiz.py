@@ -1,6 +1,7 @@
 import tkinter as tk
 import json
 import sqlite3
+import time
 
 LARGE_FONT = ("Verdana",25)
 MEDIUM_FONT = ("Verdana",15)
@@ -13,7 +14,7 @@ class RadioButton:
 		self.unchecked = tk.PhotoImage(file="resources/radiounchecked.png")
 		self.state = False
 		self._id = _id
-		self.button = tk.Button(self.root,image=self.unchecked,command=self.Toggle)
+		self.button = tk.Button(self.root,image=self.unchecked,command=self.Toggle,relief=tk.FLAT)
 		self.callback = callback
 
 	def Toggle(self):
@@ -115,7 +116,6 @@ class Question:
 	def CallBack(self,_id=None):
 		if _id is not None:
 			self.var = _id
-			print(_id,self.var)
 			for i in self.optionsradiobtn:
 				if i.GetId() != _id and i.GetState() is True:
 					i.SetState(False)
@@ -139,10 +139,16 @@ class Section:
 				self.questions.append(Question(self.frame,data["questions"][i]))
 				if i == 0:
 					self.questions[i].Grid(1,0)
-		self.prevbtn = tk.Button(self.frame,text="Back",font=MEDIUM_FONT,command=self.Back)
-		self.prevbtn.grid(row=2,column=0,sticky=tk.NW)
-		self.nextbtn = tk.Button(self.frame,text="Next",font=MEDIUM_FONT,command=self.Next)
-		self.nextbtn.grid(row=2,column=1,sticky=tk.NW,)
+		if len(self.questions) == 1 or 0:
+			self.prevbtn = tk.Button(self.frame,text="Back",font=MEDIUM_FONT,command=self.Back,state="disabled")
+			self.prevbtn.grid(row=2,column=0,sticky=tk.NW)
+			self.nextbtn = tk.Button(self.frame,text="Next",font=MEDIUM_FONT,command=self.Next,state="disabled")
+			self.nextbtn.grid(row=2,column=1,sticky=tk.NW,)
+		else:
+			self.prevbtn = tk.Button(self.frame,text="Back",font=MEDIUM_FONT,command=self.Back)
+			self.prevbtn.grid(row=2,column=0,sticky=tk.NW)
+			self.nextbtn = tk.Button(self.frame,text="Next",font=MEDIUM_FONT,command=self.Next)
+			self.nextbtn.grid(row=2,column=1,sticky=tk.NW,)
 
 	def Grid(self,row=0,column=0):
 		self.frame.grid(row=row,column=column,sticky=tk.NW)
@@ -168,17 +174,43 @@ class Test:
 		self.frame =tk.Frame(self.root)
 		self.testlbl = tk.Label(self.frame,text=data["test"],font=LARGE_FONT)
 		self.testlbl.grid(row=0,column=0,sticky=tk.NW)
+		self.timelimit = []
+		self.timelimitlbl = None
 		self.sections = []
 		self.currsection = 0
 		if data is not None:
 			for i in range(0,len(data["sections"])):
 				self.sections.append(Section(self.frame,data["sections"][i]))
-				print(i)
-		self.sections[0].Grid(row=1,column=0,)
-		self.prevbtn = tk.Button(self.frame,text="Previous Section",font=MEDIUM_FONT,command=self.Back)
-		self.prevbtn.grid(row=2,column=0,sticky=tk.NW)
-		self.nextbtn =tk.Button(self.frame,text="Next Section",font=MEDIUM_FONT,command=self.Next)
-		self.nextbtn.grid(row=2,column=1,sticky=tk.NW)
+			self.timelimit.append(int(data["time_limit"]["hour"]))
+			self.timelimit.append(int(data["time_limit"]["minute"]))
+			self.timelimit.append(int(data["time_limit"]["second"]))
+			if self.timelimit[0]>9:
+				timestr = str(self.timelimit[0])
+			else:
+				timestr = "0" + str(self.timelimit[0])
+			if self.timelimit[1]>9:
+				timestr = timestr+":"+str(self.timelimit[1])
+			else:
+				timestr = timestr+":0" + str(self.timelimit[1])
+			if self.timelimit[2]>9:
+				timestr = timestr+":"+str(self.timelimit[2])
+			else:
+				timestr = timestr+":0" + str(self.timelimit[2])
+			self.timelimitlbl = tk.Label(self.frame,text=timestr,font=LARGE_FONT)
+			self.timelimitlbl.grid(row=0,column=1,sticky=tk.NE)
+			self.timelimitlbl.after(1000,self.UpdateCountDownTimer)
+		if len(self.sections) != 0 :
+			self.sections[0].Grid(row=1,column=0,)
+		if len(self.sections) == 0 or 1:
+			self.prevbtn = tk.Button(self.frame,text="Previous Section",font=MEDIUM_FONT,command=self.Back,state="disabled")
+			self.nextbtn =tk.Button(self.frame,text="Next Section",font=MEDIUM_FONT,command=self.Next,state="disabled")
+			self.prevbtn.grid(row=2,column=0,sticky=tk.NW)
+			self.nextbtn.grid(row=2,column=1,sticky=tk.NW)
+		else:
+			self.prevbtn = tk.Button(self.frame,text="Previous Section",font=MEDIUM_FONT,command=self.Back)
+			self.nextbtn =tk.Button(self.frame,text="Next Section",font=MEDIUM_FONT,command=self.Next)
+			self.prevbtn.grid(row=2,column=0,sticky=tk.NW)
+			self.nextbtn.grid(row=2,column=1,sticky=tk.NW)
 			
 	def Grid(self,row=0,column=0):
 		self.frame.grid(row=row,column=column)
@@ -194,6 +226,37 @@ class Test:
 			self.sections[self.currsection].Hide()
 			self.currsection -= 1
 			self.sections[self.currsection].Grid(row=1,column=0,)
+
+	def UpdateCountDownTimer(self):
+		if self.timelimit[2] == 0:
+			self.timelimit[2] = 59
+			if self.timelimit[1] == 0:
+				self.timelimit[1] = 59
+				if self.timelimit[0] == 0:
+					self.timelimit[1] = 0
+					self.timelimit[2] = 0
+				else:
+					self.timelimit[0] -= 1
+					self.timelimitlbl.after(1000,self.UpdateCountDownTimer)
+			else:
+				self.timelimit[1] -= 1
+				self.timelimitlbl.after(1000,self.UpdateCountDownTimer)
+		else:
+			self.timelimit[2] -= 1
+			self.timelimitlbl.after(1000,self.UpdateCountDownTimer)
+		if self.timelimit[0]>9:
+			timestr = str(self.timelimit[0])
+		else:
+			timestr = "0" + str(self.timelimit[0])
+		if self.timelimit[1]>9:
+			timestr = timestr+":"+str(self.timelimit[1])
+		else:
+			timestr = timestr+":0" + str(self.timelimit[1])
+		if self.timelimit[2]>9:
+			timestr = timestr+":"+str(self.timelimit[2])
+		else:
+			timestr = timestr+":0" + str(self.timelimit[2])
+		self.timelimitlbl.configure(text=timestr)
 
 class Quiz:
 	def __init__(self,root):
@@ -212,26 +275,25 @@ class Quiz:
 		label.pack()
 		self.menubuttons = []
 		for i in range(0,len(row)):
-			self.menubuttons.append(tk.Button(self.menuframe,text=row[i][1],font=("Verdana",30),command=lambda:self.Start(row[i])))
+			self.menubuttons.append(tk.Button(self.menuframe,text=row[i][1],font=("Verdana",30),command=lambda j=i:self.Start(row[j])))
 			self.menubuttons[i].pack()
 
 	def Start(self,row):
 		file = open(row[2],"r")
-		data = json.loads(file.read())
+		try:
+			data = json.loads(file.read())
+		except:
+			return
 		self.test = Test(self.root,data)
 		self.menuframe.pack_forget()
+		self.test.Grid()
 	
 window = tk.Tk()
 window.geometry("1024x768")
 window.title("Quiz App")
-'''file = open("quiz.json","r")
+file = open("quiz.json","r")
 data = json.loads(file.read())
-T = Test(window,data)
-T.Grid()'''
-C = CheckButton(window,0)
-C1 = CheckButton(window,1)
-C.Pack()
-C1.Pack()
-window.mainloop()
 
+Q =Quiz(window)
+window.mainloop()
 		
