@@ -1,4 +1,5 @@
 import tkinter as tk
+from tkinter import messagebox as mb
 import json
 import sqlite3
 import time
@@ -166,8 +167,9 @@ class Section:
 		self.frame.grid_forget()
 
 class Test:
-	def __init__(self,root,data=None):
+	def __init__(self,root,data=None,callback=None):
 		self.root = root
+		self.callback = callback
 		self.frame =tk.Frame(self.root)
 		self.testlbl = tk.Label(self.frame,text=data["test"],font=LARGE_FONT)
 		self.testlbl.grid(row=0,column=0,sticky=tk.NW)
@@ -176,7 +178,9 @@ class Test:
 		self.sections = []
 		self.currsection = 0
 		self.instructionframe = None
+		self.data =None
 		if data is not None:
+			self.data =data
 			for i in range(0,len(data["sections"])):
 				self.sections.append(Section(self.frame,data["sections"][i]))
 			self.timelimit.append(int(data["time_limit"]["hour"]))
@@ -200,6 +204,8 @@ class Test:
 		if len(self.sections) == 0 or 1:
 			self.prevbtn.configure(state="disabled")
 			self.nextbtn.configure(state="disabled")
+		self.submitbtn = tk.Button(self.frame,text="Submit",font=MEDIUM_FONT,command=self.Submit)
+		self.exitbtn = tk.Button(self.frame,text="Exit",font=MEDIUM_FONT,command=self.Exit)
 
 			
 	def Grid(self,row=0,column=0):
@@ -210,6 +216,8 @@ class Test:
 			self.sections[0].Grid(row=1,column=0,)
 		self.prevbtn.grid(row=2,column=0,sticky=tk.NW)
 		self.nextbtn.grid(row=2,column=1,sticky=tk.NW)
+		self.submitbtn.grid(row=3,column=0,sticky=tk.NW)
+		self.exitbtn.grid(row=3,column=1,sticky=tk.NW)
 		self.frame.grid(row=row,column=column)
 
 	def Next(self):
@@ -276,10 +284,30 @@ class Test:
 	def HideInstruction(self):
 		self.instructionframe.pack_forget()
 
+	def Exit(self):
+		exitmb = mb.askquestion("Exit","Are you sure you want to exit?",icon="warning")
+		if exitmb == "yes":
+			self.Response()
+
+	def Submit(self):
+		submitmb = mb.askquestion("Exit","Are you sure you want to submit now?",icon="question")
+		if submitmb == "yes":
+			self.Response()
+
+	def Response(self):
+		if callback is not None:
+			data = {}
+			data["quiz_id"] = self.data["id"]
+			data["sections"] = []
+			for i in range(0,len(data["sections"])):
+				self.sections[i].append()
+			callback(data)
 
 class Quiz:
-	def __init__(self,root):
+	def __init__(self,root,user_id=None,):
 		self.root = root
+		self.user_id =user_id
+		self.quiz_id = None
 		self.menuframe = tk.Frame(self.root)
 		self.test = None
 		self.conn = sqlite3.connect("Quiz.db")

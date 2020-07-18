@@ -7,80 +7,106 @@ import json
 import sqlite3
 
 class Option:
-	def __init__(self,root,data=None,):
+	def __init__(self,root,data=None,_id=None):
 		self.root = root 
 		self.text = tk.StringVar() 
-		self._id = None
-
+		self._id = _id
+		self.keyvar = tk.IntVar()
 		self.optiontxtlbl = tk.Label(self.root,text="Option")
 		self.optiontxt = tk.Text(self.root,height=1)
+		self.optionkeylbl = tk.Label(self.root,text="Key")
+		self.optionkeychkbtn = tk.Checkbutton(self.root,variable=self.keyvar)
 
 		if data is not None:
 			if "option" in data:
 				self.optiontxt.insert(tk.INSERT,data["option"])
+			if "id" in data:
+				self._id = data["id"]
+			if "key"in data:
+				self.keyvar.set(data["key"])
 			
 	def Grid(self,row=0,column=0):
 		self.optiontxtlbl.grid(row=row,column=column,)
 		self.optiontxt.grid(row=row,column=column+1)
+		self.optionkeylbl.grid(row=row,column=column+2)
+		self.optionkeychkbtn.grid(row=row,column=column+3)
 
 	def Destroy(self):
 		self.optiontxtlbl.destroy()
 		self.optiontxt.destroy()
+		self.optionkeylbl.destroy()
+		self.optionkeychkbtn.destroy()
+
+	def SetId(self,_id):
+		self._id = _id
+
+	def GetId(self):
+		return self._id
 
 	def Export(self):
 		data = {}
 		data["option"] = self.optiontxt.get("1.0","end").rstrip("\n")
+		data["id"]  = self._id
+		if self.keyvar.get() == 0:
+			data["key"] = False
+		else:
+			data["key"] = True
 		return data
 
-	def View(self):
-		pass
-
 class Question:
-	def __init__(self,root,data=None,):
+	def __init__(self,root,data=None,_id=None):
 		self.root = root 
-		self.id = None
+		self._id = _id
 		self.options = None
 		self.removeoptionsbtn = None
-		self.keys = None
 		self.time_limit = None
-		self.note = None
-		self.answer = None
-		self.jumble = None
-		self.responses = None
+		self.pointvar = tk.IntVar()
 
 		self.frame = tk.LabelFrame(self.root,)
 		self.questiontxtlbl = tk.Label(self.frame,text="Question")
 		self.questiontxt = tk.Text(self.frame,height=2)
 		self.quesbtnframe = tk.Frame(self.frame,)
-		self.addoptionsbtn = tk.Button(self.quesbtnframe,text="Add Option",command=self.AddOption)		
+		self.addoptionsbtn = tk.Button(self.quesbtnframe,text="Add Option",command=self.AddOption)
+		self.pointlbl = tk.Label(self.quesbtnframe,text="Point") 
+		self.pointspnbox = tk.Spinbox(self.quesbtnframe,from_=0,to=999,wrap=True,width=3,state="disabled")	
+		self.pointchkbtn = tk.Checkbutton(self.quesbtnframe,variable=self.pointvar,command=self.TogglePoint)	
 
 		if data is not None:
-				if "question" in data:
-					self.questiontxt.insert(tk.INSERT,data["question"])
-					for i in range(0,len(data["options"])):
-						self.AddOption(data["options"][i])
+			if "id" in data:
+				self._id = data["id"]
+			if "question" in data:
+				self.questiontxt.insert(tk.INSERT,data["question"])
+			if "options" in data:
+				for i in range(0,len(data["options"])):
+					self.AddOption(data["options"][i])
+			if "point" in data:
+				if data["point"] != "0":
+					self.pointvar.set(1)
+					self.pointspnbox.configure(state="normal")
+					self.pointspnbox.delete(0,"end")
+					self.pointspnbox.insert(tk.INSERT,data["point"])
 
-	def AddOption(self,data=None):
+	def AddOption(self,data=None,):
 		if self.options is None:
 			self.options = list()
 			if data is None:
-				self.options.append(Option(self.frame))
+				self.options.append(Option(self.frame,None,len(self.options)))
 			else:
 				self.options.append(Option(self.frame,data))
 			self.options[len(self.options)-1].Grid(len(self.options),0)
 
 			self.removeoptionsbtn = list()
 			self.removeoptionsbtn.append(tk.Button(self.frame,text="Remove",command=lambda i=len(self.options) : self.RemoveOption(i-1)))
-			self.removeoptionsbtn[len(self.removeoptionsbtn)-1].grid(row=len(self.removeoptionsbtn),column=2,)
+			self.removeoptionsbtn[len(self.removeoptionsbtn)-1].grid(row=len(self.removeoptionsbtn),column=4,)
 		else:
 			if data is None:
-				self.options.append(Option(self.frame))
+				self.options.append(Option(self.frame,None,len(self.options)))
 			else:
-				self.options.append(Option(self.frame,data))
+				self.options.append(Option(self.frame,data,))
 			self.options[len(self.options)-1].Grid(len(self.options),0)
 
 			self.removeoptionsbtn.append(tk.Button(self.frame,text="Remove",command=lambda i=len(self.options) : self.RemoveOption(i-1)))
-			self.removeoptionsbtn[len(self.removeoptionsbtn)-1].grid(row=len(self.removeoptionsbtn),column=2,)
+			self.removeoptionsbtn[len(self.removeoptionsbtn)-1].grid(row=len(self.removeoptionsbtn),column=4,)
 	
 	def RemoveOption(self,index=None):
 		if index is not None:
@@ -89,31 +115,50 @@ class Question:
 			del self.options[index]
 			del	self.removeoptionsbtn[index]
 			for i in range(0,len(self.options)):
+				self.options[i].SetId(i)
 				self.removeoptionsbtn[i].config(command=lambda: self.RemoveOption(i))
 
 	def Grid(self,row=0,column=0):
 		self.questiontxtlbl.grid(row=0,column=0)
 		self.questiontxt.grid(row=0,column=1)
+		self.addoptionsbtn.grid(row=1,column=0)
+		self.pointlbl.grid(row=2,column=0)
+		self.pointspnbox.grid(row=2,column=1)
+		self.pointchkbtn.grid(row=2,column=2)
 		self.quesbtnframe.grid(row=0,column=2)
-		self.addoptionsbtn.grid(row=2,column=0)
 		self.frame.grid(row=row,column=column,)
 
 	def Destroy(self):
 		self.frame.destroy()
 
+	def TogglePoint(self):
+		if self.pointvar.get() == 0:
+			self.pointspnbox.configure(state="disabled")
+		else:
+			self.pointspnbox.configure(state="normal")
+
 	def Export(self):
 		data = {}
+		data["id"] = self._id
 		data["question"] = self.questiontxt.get("1.0","end").rstrip("\n")
 		data["options"] = []
+		if self.pointvar.get() == 0:
+			data["point"] = "0"
+		else:
+			data["point"] = self.pointspnbox.get()
 		if self.options is not None:
 			for i in self.options:
 				data["options"].append(i.Export())
 		return data
+
+	def SetId(self,_id):
+		self._id = _id
+
 		
 class Section:
-	def __init__(self,root,data=None):
+	def __init__(self,root,data=None,_id=None):
 		self.root = root
-		self.id = None
+		self._id = _id
 		self.name = None
 		self.time_limit = None
 		self.questions = None
@@ -131,6 +176,8 @@ class Section:
 		self.addquestionbtn = tk.Button(self.sectionbtnframe,text="Add Question",command=self.AddQuestion)
 
 		if data is not None:
+			if "id" in data:
+				self._id =data["id"]
 			if "section" in data:
 				self.sectionametext.insert(tk.INSERT,data["section"])
 				for i in range(0,len(data["questions"])):
@@ -148,9 +195,9 @@ class Section:
 		if self.questions is None:
 			self.questions = list()
 			if data is None:
-				self.questions.append(Question(self.questionframe))
+				self.questions.append(Question(self.questionframe,None,len(self.questions)))
 			else:
-				self.questions.append(Question(self.questionframe,data))
+				self.questions.append(Question(self.questionframe,data,))
 			self.questions[len(self.questions)-1].Grid(len(self.questions)-1,0)
 
 			self.removequestionsbtn = list()
@@ -158,29 +205,14 @@ class Section:
 			self.removequestionsbtn[len(self.removequestionsbtn)-1].grid(row=len(self.questions)-1,column=1,sticky= tk.NW)
 		else:
 			if data is None:
-				self.questions.append(Question(self.questionframe))
+				self.questions.append(Question(self.questionframe,None,len(self.questions)))
 			else:
-				self.questions.append(Question(self.questionframe,data))
+				self.questions.append(Question(self.questionframe,data,))
 			self.questions[len(self.questions)-1].Grid(len(self.questions)-1,0)
 
 			self.removequestionsbtn.append(tk.Button(self.questionframe,text="Remove",command=lambda i=len(self.questions):self.RemoveQuestion(i-1)))
 			self.removequestionsbtn[len(self.removequestionsbtn)-1].grid(row=len(self.questions)-1,column=1,sticky= tk.NW)
 	
-	def IsJumbled(self,jumble = False):
-		self.jumble = jumble
-
-	def Show(self):
-		print("Section")
-		if self.name is not None:
-			print("Name: " + self.name)
-		else:
-			print("Name: None ")
-		if self.questions is not None:
-			for i in self.questions:
-				i.Show()
-		else:
-			print("Sections: None")
-
 	def RemoveQuestion(self,index=None):
 		if index is not None:
 			self.questions[index].Destroy()
@@ -188,6 +220,7 @@ class Section:
 			del self.questions[index]
 			del self.removequestionsbtn[index]
 			for i in range(0,len(self.questions)):
+				self.questions[i].SetId(i)
 				self.removequestionsbtn[i].config(command=lambda:self.RemoveQuestion(i))
 
 	def Destroy(self):
@@ -205,12 +238,16 @@ class Section:
 
 	def Export(self):
 		data = {}
+		data["id"] = self._id
 		data["section"] = self.sectionametext.get("1.0","end").rstrip("\n")
 		data["questions"] = []
 		if self.questions is not None:
 			for i in self.questions:
 				data["questions"].append(i.Export())
 		return data
+
+	def SetId(self,_id):
+		self._id = _id
 
 class Instruction:
 	def __init__(self,data=None):
@@ -294,6 +331,8 @@ class Test:
 		self.testdate = DateEntry(self.testbtnframe,width=30,bg="darkblue",fg="white",year=2020,mindate=dt.date.today(),state="disabled")
 		self.testdatechkbtn = tk.Checkbutton(self.testbtnframe,variable=self.testdatevar,command=self.ToggleDate)
 		if data is not None:
+			if "id" in data:
+				self._id = _id
 			if "test" in data:
 				self.testnametext.insert(tk.INSERT,data["test"])
 				for i in range(0,len(data["sections"])):
@@ -332,9 +371,9 @@ class Test:
 		if self.sections is None:
 			self.sections = list()
 			if data is not None:
-				self.sections.append(Section(self.sectionframe,data))
+				self.sections.append(Section(self.sectionframe,data,))
 			else:
-				self.sections.append(Section(self.sectionframe,))
+				self.sections.append(Section(self.sectionframe,None,len(self.sections)))
 			self.sections[len(self.sections)-1].Grid(len(self.sections)-1,0)
 
 			self.removesectionsbtn = list()
@@ -342,9 +381,9 @@ class Test:
 			self.removesectionsbtn[len(self.removesectionsbtn)-1].grid(row=len(self.sections)-1,column=1,sticky=tk.NW)
 		else:
 			if data is not None:
-				self.sections.append(Section(self.sectionframe,data))
+				self.sections.append(Section(self.sectionframe,data,))
 			else:
-				self.sections.append(Section(self.sectionframe,))
+				self.sections.append(Section(self.sectionframe,None,len(self.sections)))
 			self.sections[len(self.sections)-1].Grid(len(self.sections)-1,0)
 
 			self.removesectionsbtn.append(tk.Button(self.sectionframe,text="Remove",command=lambda i=len(self.sections): self.RemoveSection(i-1)))
@@ -392,6 +431,7 @@ class Test:
 			del self.sections[index]
 			del self.removesectionsbtn[index]
 			for i in range(0,len(self.sections)):
+				self.sections[i].SetId(i)
 				self.removesectionsbtn[i].config(command=lambda:self.RemoveSection(i))
 
 	def Destroy(self):
@@ -429,6 +469,7 @@ class Test:
 	def Export(self,savedialog=None):
 		if self.path and  self._id and self.name is not None:
 			data = {}
+			data["id"] =self._id
 			data["test"] = self.testnametext.get("1.0","end").rstrip("\n")
 			if self.testdatevar.get() == 0:
 				data["date"] = {"day":"0","month":"0","year":"0",}
@@ -465,6 +506,7 @@ class Test:
 			cursor.execute("SELECT id FROM quizzes WHERE path=?",(self.path,))
 			self._id = cursor.fetchone()[0]
 			data = {}
+			data["id"] = self._id
 			data["test"] = self.testnametext.get("1.0","end")
 			if self.testdatevar.get() == 0:
 				data["date"] = {"day":"0","month":"0","year":"0",}
@@ -587,6 +629,6 @@ class QuizEditor:
 if __name__ == "__main__" :
 	window = tk.Tk()
 	window.geometry("1024x768")
-	window.title("Quiz App")
+	window.title("Quiz Editor App")
 	Q =  QuizEditor(window)
 	window.mainloop()

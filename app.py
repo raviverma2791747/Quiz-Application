@@ -99,6 +99,9 @@ class User:
 	def GetUsername(self):
 		return self.username
 
+	def GetUserId(self):
+		return self._id
+
 class LoginWindow:
 	def __init__(self,user):
 		self.window = tk.Tk()
@@ -161,7 +164,7 @@ class Application:
 		if self.user.GetPrivilege() == 1:
 			self.quizeditor = QE.QuizEditor(self.window)
 		else:
-			self.quiz = Q.Quiz(self.window)
+			self.quiz = Q.Quiz(self.window,self.user.GetUserId())
 
 	def Run(self):
 		self.window.mainloop()
