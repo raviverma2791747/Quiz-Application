@@ -11,10 +11,11 @@ SMALL_FONT =("Verdana",13)
 VERY_SMALL_FONT = ("Verdana",8)
 
 class User:
-	def __init__(self,username=None,password=None,privilege=None):
+	def __init__(self,_id=None,username=None,password=None,privilege=None):
 		self.username = username
 		self.password = password
 		self.privilege = privilege
+		self._id = _id
 		self.conn = sqlite3.connect('Quiz.db')
 		self.cursor = None
 		self.root = None
@@ -28,9 +29,10 @@ class User:
 			print("Invalid Password!")
 			return False
 		else:
-			self.cursor = self.conn.execute("SELECT id,username,password,privilege FROM users WHERE username=? AND password=?",(username,password))
+			self.cursor = self.conn.execute("SELECT * FROM users WHERE username=? AND password=?",(username,password))
 			row = self.cursor.fetchone()
 			if( username == row[1] and password == row[2]):
+				self._id = row[0]
 				self.username = row[1]
 				self.password = row[2]
 				self.privilege = row[3]
@@ -132,7 +134,6 @@ class LoginWindow:
 	def Submit(self):
 		if self.user.Login(self.uentry.get(),self.pentry.get()) is True:
 			self.window.destroy()
-			self.user.DashBoard()
 
 class QuizMenu:
 	def __init__(self,root,user):
@@ -171,10 +172,9 @@ class Application:
 
 if __name__ == "__main__":
 	U = User("admin","password",0)
-	U.DashBoard()
-	#L = LoginWindow(U) 
-	#L.Run()
-	'''A = Application(U)
-	A.Run()'''
+	L = LoginWindow(U) 
+	L.Run()
+	A = Application(U)
+	A.Run()
 
 

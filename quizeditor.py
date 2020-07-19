@@ -53,6 +53,9 @@ class Option:
 			data["key"] = True
 		return data
 
+	def IsKey(self):
+		return self.keyvar.get()
+
 class Question:
 	def __init__(self,root,data=None,_id=None):
 		self.root = root 
@@ -142,13 +145,19 @@ class Question:
 		data["id"] = self._id
 		data["question"] = self.questiontxt.get("1.0","end").rstrip("\n")
 		data["options"] = []
+		data["type"] = "single"
 		if self.pointvar.get() == 0:
 			data["point"] = "0"
 		else:
 			data["point"] = self.pointspnbox.get()
 		if self.options is not None:
-			for i in self.options:
-				data["options"].append(i.Export())
+			count = 0
+			for i in range(0,len(self.options)):
+				data["options"].append(self.options[i].Export())
+				if self.options[i].IsKey() == True:
+					count += 1
+			if count>1:
+				data["type"] = "multiple"
 		return data
 
 	def SetId(self,_id):
@@ -182,6 +191,7 @@ class Section:
 				self.sectionametext.insert(tk.INSERT,data["section"])
 				for i in range(0,len(data["questions"])):
 					self.AddQuestion(data["questions"][i])
+
 
 	def SetName(self,name=None):
 		if name is not None:
@@ -330,6 +340,9 @@ class Test:
 		self.testtimechkbtn = tk.Checkbutton(self.testbtnframe,variable=self.testtimevar,command=self.ToggleTime)
 		self.testdate = DateEntry(self.testbtnframe,width=30,bg="darkblue",fg="white",year=2020,mindate=dt.date.today(),state="disabled")
 		self.testdatechkbtn = tk.Checkbutton(self.testbtnframe,variable=self.testdatevar,command=self.ToggleDate)
+		self.testlimitresponselbl = tk.Label(self.testbtnframe,text="Limit Response")
+		self.testlimitresponsespnbox = tk.Spinbox(self.testbtnframe,from_=0,to=99,wrap=True,width=2)
+
 		if data is not None:
 			if "id" in data:
 				self._id = _id
@@ -366,6 +379,9 @@ class Test:
 					self.testtimelimitminspnbox.configure(state="normal")
 					self.testtimelimitminspnbox.delete(0,"end")
 					self.testtimelimitminspnbox.insert(tk.INSERT,data["time_limit"]["minute"])
+			if "response_limit" in data:
+				self.testlimitresponsespnbox.delete(0,"end")
+				self.testlimitresponsespnbox.insert(tk.INSERT,str(data["response_limit"]))
 
 	def AddSection(self,data=None):
 		if self.sections is None:
@@ -413,6 +429,8 @@ class Test:
 		#self.testtimeseclbl.grid(row=0,column=4)
 		#self.testtimesecspnbox.grid(row=0,column=5)
 		self.testtimechkbtn.grid(row=2,column=2)
+		self.testlimitresponselbl.grid(row=4,column=0)
+		self.testlimitresponsespnbox.grid(row=4,column=1)
 		self.testtimeframe.grid(row=2,column=1)
 		self.testbtnframe.grid(row=0,column=2)
 		self.testframe.grid(row = 0,column = 0,sticky=tk.NW)
@@ -471,6 +489,7 @@ class Test:
 			data = {}
 			data["id"] =self._id
 			data["test"] = self.testnametext.get("1.0","end").rstrip("\n")
+			data["response_limit"] =  int(self.testlimitresponsespnbox.get())
 			if self.testdatevar.get() == 0:
 				data["date"] = {"day":"0","month":"0","year":"0",}
 			else:
@@ -508,6 +527,7 @@ class Test:
 			data = {}
 			data["id"] = self._id
 			data["test"] = self.testnametext.get("1.0","end")
+			data["response_limit"] =  int(self.testlimitresponsespnbox.get())
 			if self.testdatevar.get() == 0:
 				data["date"] = {"day":"0","month":"0","year":"0",}
 			else:
@@ -541,10 +561,14 @@ class QuizEditor:
 		self.menubar = tk.Menu(root)
 
 		self.filemenubar = tk.Menu(self.menubar,tearoff=0)
-		self.filemenubar.add_command(label="New",command=self.New)
-		self.filemenubar.add_command(label="Open",command=self.Open)
-		self.filemenubar.add_command(label="Save",command=self.Save)
-		self.filemenubar.add_command(label="Exit",command=self.Exit)
+		self.filemenubar.add_command(label="New",command=self.New,accelerator="Ctrl+N")
+		self.root.bind('<Control-n>',lambda e:self.New())
+		self.filemenubar.add_command(label="Open",command=self.Open,accelerator="Ctrl+O")
+		self.root.bind('<Control-o>',lambda e:self.Open())
+		self.filemenubar.add_command(label="Save",command=self.Save,accelerator="Ctrl+S")
+		self.root.bind('<Control-s>',lambda e:self.Save())
+		self.filemenubar.add_command(label="Exit",command=self.Exit,accelerator="Ctrl+Q")
+		self.root.bind('<Control-q>',lambda e:self.Exit())
 
 		self.menubar.add_cascade(label="File",menu=self.filemenubar)
 		self.menubar.add_command(label="About",command=self.About)
@@ -562,6 +586,7 @@ class QuizEditor:
 		abouttext.insert(tk.INSERT,"Version 1.0")
 		abouttext.configure(state='disabled')
 		abouttext.pack()
+		aboutwindow.grab_set()
 
 	def New(self,_id=None,name=None,path=None):
 		if self.test is None:
@@ -588,6 +613,7 @@ class QuizEditor:
 			self.openwindow = tk.Toplevel(self.root)
 			self.openwindow.geometry("200x200")
 			self.openwindow.title("Open")
+			self.openwindow.grab_set()
 			cursor = self.conn.cursor().execute("SELECT * FROM quizzes")
 			quizzes = cursor.fetchall()
 			if len(quizzes) == 0:
