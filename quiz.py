@@ -374,7 +374,7 @@ class Test:
 		self.frame.destroy()
 
 class Quiz:
-	def __init__(self,root,user_id=None,):
+	def __init__(self,root,user_id=None,callback=None):
 		self.root = root
 		self.user_id =user_id
 		self.quiz_id = None
@@ -385,6 +385,7 @@ class Quiz:
 		self.Menu()
 		self.menuframe.pack()
 		self.data = None
+		self.callback  = callback
 
 	def Menu(self):
 		if self.menubuttons is None:
@@ -392,6 +393,8 @@ class Quiz:
 			row = cursor.fetchall()
 			label = tk.Label(self.menuframe,text="Quizzes Available!",font=("Verdana",50))
 			label.grid(row=0,column=0,sticky="W")
+			exitbtn = tk.Button(self.menuframe,text="Exit",font=MEDIUM_FONT,command=self.Exit)
+			exitbtn.grid(row=0,column=2,sticky="E")
 			self.menubuttons = []
 			for i in range(0,len(row)):
 				self.menubuttons.append(tk.Button(self.menuframe,text=row[i][1],font=("Verdana",30),relief=tk.FLAT,command=lambda j=i:self.Start(row[j],j)))
@@ -476,6 +479,16 @@ class Quiz:
 					else:
 						result.append((self.data["sections"][i]["id"],self.data["sections"][i]["questions"][j]["id"],0,))
 			response.update({"result":result})
+
+	def Exit(self):
+		if self.menuframe is not None:
+			self.menuframe.destroy()
+		if __name__ == "__main__":
+			self.root.destroy()
+		else:
+			if self.callback is not None:
+				self.callback()
+
 						
 if __name__ == "__main__" :
 	window = tk.Tk()
@@ -484,6 +497,6 @@ if __name__ == "__main__" :
 	#file = open("quiz.json","r")
 	#data = json.loads(file.read())
 
-	Q =Quiz(window,2)
+	Q =Quiz(window,1)
 	window.mainloop()
 		

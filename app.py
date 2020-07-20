@@ -4,46 +4,18 @@ import json
 import quizeditor as QE
 import quiz as Q
 
-
+VERY_LARGE_FONT = ("Verdana",35)
 LARGE_FONT = ("Verdana",25)
 MEDIUM_FONT = ("Verdana",15)
 SMALL_FONT =("Verdana",13)
 VERY_SMALL_FONT = ("Verdana",8)
 
 class User:
-	def __init__(self,_id=None,username=None,password=None,privilege=None):
-		self.username = username
+	def __init__(self,_id,username,password,privilege):
+		self._id = _id
+		self.username =  username
 		self.password = password
 		self.privilege = privilege
-		self._id = _id
-		self.conn = sqlite3.connect('Quiz.db')
-		self.cursor = None
-		self.root = None
-		self.frame = None
-
-	def Login(self,username,password):
-		if username == "":
-			print("Invalid Username!")
-			return False
-		elif password == "":
-			print("Invalid Password!")
-			return False
-		else:
-			self.cursor = self.conn.execute("SELECT * FROM users WHERE username=? AND password=?",(username,password))
-			row = self.cursor.fetchone()
-			if( username == row[1] and password == row[2]):
-				self._id = row[0]
-				self.username = row[1]
-				self.password = row[2]
-				self.privilege = row[3]
-				print("Username : " + str(self.username))
-				print("Password : " + str(self.password))
-				print("Privilege : " + str(self.privilege))
-				print("success")
-				return True
-			else:
-				print("Failure")
-				return False
 
 	def DashBoard(self):
 		window =tk.Tk()
@@ -94,7 +66,6 @@ class User:
 		frame.pack(fill="both",expand="true")
 		window.mainloop()
 
-
 	def GetPrivilege(self):
 		return self.privilege
 
@@ -103,78 +74,94 @@ class User:
 
 	def GetUserId(self):
 		return self._id
+		
+class Application:
+	def __init__(self):
+		self.window = None
+		self.user = None
+		self.app = None
+		self.frame = None
+		self.uentry  = None
+		self.pentry = None
 
-class LoginWindow:
-	def __init__(self,user):
 		self.window = tk.Tk()
 		self.window.title("Quiz App Login")
-		self.window.geometry("500x300+200+200")
+		self.window.geometry("500x250+200+200")
 		self.window.resizable(height = False , width = False)
 
-		self.user = user
+		tlabel = tk.Label(self.window,text="Quiz App",font =VERY_LARGE_FONT)
+		ulabel = tk.Label(self.window,text="Username",font = MEDIUM_FONT)
+		self.uentry = tk.Entry(self.window,font =MEDIUM_FONT,width=14)
+		plabel = tk.Label(self.window,text="Password",font = MEDIUM_FONT)
+		self.pentry = tk.Entry(self.window,font = MEDIUM_FONT,show="*",width=14)
+		lbutton = tk.Button(self.window,font = SMALL_FONT,text="Login",command=self.Login)
+		sbutton = tk.Button(self.window,font = SMALL_FONT,text="Sign Up")
 
-		self.tlabel = tk.Label(self.window,text="Quiz App",font = ("Arial",30))
-		self.ulabel = tk.Label(self.window,text="Username",font = ("Arial",20))
-		self.uentry = tk.Entry(self.window,font = ("Times",20),width=14)
-		self.plabel = tk.Label(self.window,text="Password",font = ("Arial",20))
-		self.pentry = tk.Entry(self.window,font = ("Arial",20),show="*",width=14)
-		self.lbutton = tk.Button(self.window,font = ("Arial",15),text="Login",command= self.Submit)
-		self.sbutton = tk.Button(self.window,font = ("Arial",15),text="Sign Up")
-
-	def Run(self):
-		self.tlabel.grid(row = 0 , column = 1)
-		self.ulabel.grid(row = 1, column = 0)
+		tlabel.grid(row = 0 , column = 1,padx=10,pady=10)
+		ulabel.grid(row = 1, column = 0,padx=10)
 		self.uentry.grid(row = 1, column = 1)
-		self.plabel.grid(row = 2, column = 0)
+		plabel.grid(row = 2, column = 0,padx=10)
 		self.pentry.grid(row = 2, column = 1)
-		self.lbutton.grid(row = 3, column = 0)
-		self.sbutton.grid(row = 3, column = 1)
+		lbutton.grid(row = 3, column = 0,sticky="E",pady=10)
+		sbutton.grid(row = 3, column = 1,sticky="E",pady=10)
 		self.window.mainloop()
 
-	def Submit(self):
-		if self.user.Login(self.uentry.get(),self.pentry.get()) is True:
-			self.window.destroy()
+	def Login(self):
+		self.username = self.uentry.get()
+		self.password = self.pentry.get()
+		if  self.username == "" or self.password == "":
+			pass
+		else:
+			conn = sqlite3.connect("Quiz.db")
+			cursor = conn.execute("SELECT * FROM users WHERE username=? AND password=?",(self.username,self.password))
+			row = cursor.fetchone()
+			if row is not None:
+				self.window.destroy()
+				self.user = User(row[0],row[1],row[2],row[3])
+				self.Run()
 
-class QuizMenu:
-	def __init__(self,root,user):
-		self.root = root
-		self.frame = tk.Frame(self.root,)
-		self.user = user
-		self.conn = sqlite3.connect("Quiz.db")
-		self.cursor = self.conn.execute("SELECT * FROM quizzes")
-		self.quizzes = self.cursor.fetchall()
-		self.Menu()
-		self.frame.grid(row=0,column=0)
-	
-	def Menu(self):
-		if len(self.quizzes) == 0:
-			lbl = tk.Label(self.frame,text="No Quizzes Available!")
-			lbl.grid(row=0,column=1)
-		for i in range(0,len(self.quizzes)):
-			btn = tk.Button(self.frame,text=self.quizzes[i][2],)
-			btn.grid(row=i,column=1)
-
-class Application:
-	def __init__(self,user):
+	def Run(self):
 		self.window = tk.Tk()
 		self.window.title("Quiz App")
 		self.window.geometry("1024x768")
-		self.user = user
-		self.quizeditor =None
-		self.quiz = None
+		self.frame =  tk.Frame(self.window)		
 		if self.user.GetPrivilege() == 1:
-			self.quizeditor = QE.QuizEditor(self.window)
-		else:
-			self.quiz = Q.Quiz(self.window,self.user.GetUserId())
+			lbl = tk.Label(self.frame,text="Admin Menu",font=VERY_LARGE_FONT)
+			quizbtn = tk.Button(self.frame,text="Quiz",relief=tk.FLAT,font=MEDIUM_FONT,command=self.RunQuiz)
+			quizeditorbtn = tk.Button(self.frame,text="Quiz Editor",relief=tk.FLAT,font=MEDIUM_FONT,command=self.RunQuizEditor)
+			userdashboardbtn = tk.Button(self.frame,text="User DashBoard (Under Development)",relief=tk.FLAT,font=MEDIUM_FONT)
 
-	def Run(self):
+			lbl.pack()
+			quizbtn.pack()
+			quizeditorbtn.pack()
+			userdashboardbtn.pack()
+		else:
+			lbl = tk.Label(self.frame,text="User Menu",font=VERY_LARGE_FONT)
+			quizbtn = tk.Button(self.frame,text="Quiz",relief=tk.FLAT,font=MEDIUM_FONT,command=self.RunQuiz)
+			userdashboardbtn = tk.Button(self.frame,text="User DashBoard  (Under Development)",relief=tk.FLAT,font=MEDIUM_FONT)
+
+			lbl.pack()
+			quizbtn.pack()
+			userdashboardbtn.pack()
+		self.frame.pack()
 		self.window.mainloop()
 
+	def CallBack(self):
+		self.app = None
+		self.frame.pack()
+
+	def RunQuiz(self):
+		if self.app is None:
+			self.Hide()
+			self.app = Q.Quiz(self.window,self.user.GetUserId(),self.CallBack)
+
+	def RunQuizEditor(self):
+		if self.app is None:
+			self.Hide()
+			self.app = QE.QuizEditor(self.window,self.CallBack)
+	
+	def Hide(self):
+		self.frame.pack_forget()
+
 if __name__ == "__main__":
-	U = User("admin","password",0)
-	L = LoginWindow(U) 
-	L.Run()
-	A = Application(U)
-	A.Run()
-
-
+	A = Application()

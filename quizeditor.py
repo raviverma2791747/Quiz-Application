@@ -6,6 +6,32 @@ import datetime as dt
 import json
 import sqlite3
 
+
+MEDIUM_FONT = ("Verdana",25)
+SMALL_MEDIUM_FONT = ("Verdana",17)
+SMALL_FONT = ("Verdana",12)
+
+class ScrollableFrame(tk.Frame):
+    def __init__(self, container, *args, **kwargs):
+        super().__init__(container, *args, **kwargs)
+        canvas = tk.Canvas(self)
+        scrollbar = tk.Scrollbar(self, orient="vertical", command=canvas.yview)
+        self.scrollable_frame = tk.Frame(canvas)
+
+        self.scrollable_frame.bind(
+            "<Configure>",
+            lambda e: canvas.configure(
+                scrollregion=canvas.bbox("all")
+            )
+        )
+
+        canvas.create_window((0, 0), window=self.scrollable_frame, anchor="nw")
+
+        canvas.configure(yscrollcommand=scrollbar.set)
+
+        canvas.pack(side="left", fill="both", expand=True)
+        scrollbar.pack(side="right", fill="y",)
+
 class Option:
 	def __init__(self,root,data=None,_id=None):
 		self.root = root 
@@ -552,13 +578,15 @@ class Test:
 		mb.showinfo('Saved', "File has been saved successfully!")
 
 class QuizEditor:
-	def __init__(self,root):
+	def __init__(self,root,callback=None):
 		self.root = root
+		self.root.title("Quiz Editor")
 		self.test = None
 		self.conn =  sqlite3.connect("Quiz.db")
 		self.openwindow = None
 		self.openwindowbtns = None
 		self.menubar = tk.Menu(root)
+		self.callback = callback
 
 		self.filemenubar = tk.Menu(self.menubar,tearoff=0)
 		self.filemenubar.add_command(label="New",command=self.New,accelerator="Ctrl+N")
@@ -611,19 +639,24 @@ class QuizEditor:
 	def Open(self):
 		if self.test is None:
 			self.openwindow = tk.Toplevel(self.root)
-			self.openwindow.geometry("200x200")
+			self.openwindow.geometry("350x400")
 			self.openwindow.title("Open")
 			self.openwindow.grab_set()
+			self.openwindow.resizable(height=False,width=False)
+			scrollframe = ScrollableFrame(self.openwindow)
 			cursor = self.conn.cursor().execute("SELECT * FROM quizzes")
 			quizzes = cursor.fetchall()
+			tlabel = tk.Label(scrollframe.scrollable_frame,text="List of Quizzes to Edit!",font=SMALL_MEDIUM_FONT)
+			tlabel.pack()
 			if len(quizzes) == 0:
-				lbl = tk.Label(self.openwindow,text="No quizzes to edit")
+				lbl = tk.Label(scrollframe.scrollable_frame,text="No quizzes to edit",font=SMALL_FONT)
 				lbl.pack()
 			else:
 				self.openwindowbtns = []
 				for i in range(0,len(quizzes)):
-					self.openwindowbtns.append(tk.Button(self.openwindow,text=quizzes[i][1],command=lambda j=i:self.New(quizzes[j][0],quizzes[j][1],quizzes[j][2])))
+					self.openwindowbtns.append(tk.Button(scrollframe.scrollable_frame,text=quizzes[i][1],relief=tk.FLAT,font=SMALL_FONT,command=lambda j=i:self.New(quizzes[j][0],quizzes[j][1],quizzes[j][2])))
 					self.openwindowbtns[i].pack()
+			scrollframe.pack()
 		else:
 			self.Save()
 			self.DestroyTest()
@@ -639,7 +672,16 @@ class QuizEditor:
 	def Exit(self):
 		if self.test is not None:
 			self.Save()
-		self.root.destroy()
+			self.menubar.destroy()
+			self.DestroyTest()
+		else:
+			self.menubar.destroy()
+		if __name__ == "__main__":
+			self.root.destroy()
+		else:
+			self.root.title("Quiz App")
+			if self.callback is not None:
+				self.callback()
 
 	def SaveDialog(self):
 		self.savedialog = fd.asksaveasfile(filetypes = [("JSON","*.json")], defaultextension = [("JSON","*.json")]) 
@@ -649,8 +691,6 @@ class QuizEditor:
 	def DestroyTest(self):
 		self.test.Destroy()
 		self.test = None
-		if self.savedialog is not None:
-			self.savedialog.destroy()
 	
 if __name__ == "__main__" :
 	window = tk.Tk()
