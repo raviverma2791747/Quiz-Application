@@ -459,15 +459,29 @@ class Quiz:
 			if date.today().year == data["date"]["year"] and date.today().month == data["date"]["month"] and date.today().day == data["date"]["day"]:
 				pass
 			else:
+				lbl = tk.Label(self.menuframe,text="Quiz will be available on " + str(data["date"]["day"]) + "/" + str(data["date"]["month"]) + "/" + str(data["date"]["year"]),font=MEDIUM_FONT)
+				lbl.grid(row=button_row+1,column=1)
 				return
-		if data["time"]["hour"] != 0 and data["time"]["minute"] != 0:
+		if data["time"]["hour"] != 0 or data["time"]["minute"] != 0:
 			now = datetime.now()
 			current_time = current_time = now.strftime("%H:%M:%S")
 			current_time = current_time.split(":")
 			if int(current_time[0]) == data["time"]["hour"] and int(current_time[1]) >= data["time"]["minute"]:
 				pass
 			else:
-			    return
+				quiz_time = ""
+				if data["time"]["hour"] < 10:
+					quiz_time = "0"+ str(data["time"]["hour"])
+				else:
+					quiz_time = str(data["time"]["hour"])
+				quiz_time += ":"
+				if data["time"]["minute"] < 10:
+					quiz_time += "0"+ str(data["time"]["minute"])
+				else:
+					quiz_time +=  str(data["time"]["minute"])
+				lbl = tk.Label(self.menuframe,text="Quiz will be available at " + quiz_time,font=MEDIUM_FONT)
+				lbl.grid(row=button_row+1,column=1)
+				return
 		self.test = Test(self.root,data,self.CallBack)
 		conn = sqlite3.connect("Quiz.db")
 		cur = conn.cursor()

@@ -613,7 +613,7 @@ class QuizEditor:
 		aboutwindow.geometry("300x100+100+100")
 		aboutwindow.resizable(height = False , width = False)
 		abouttext = tk.Text(aboutwindow,font=("Verdana", 20))
-		abouttext.insert(tk.INSERT,"Version 1.0")
+		abouttext.insert(tk.INSERT,"Quiz Editor \nVersion 1.0")
 		abouttext.configure(state='disabled')
 		abouttext.pack()
 		aboutwindow.grab_set()
