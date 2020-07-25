@@ -1,12 +1,35 @@
 import tkinter as tk
 from tkinter import messagebox as mb
+import tkinter.scrolledtext as st
 import json
 import sqlite3
 import time
-
+from datetime import datetime
+from datetime import date
 LARGE_FONT = ("Verdana",25)
 MEDIUM_FONT = ("Verdana",15)
 SMALL_FONT =("Verdana",10)
+
+class ScrollableFrame(tk.Frame):
+    def __init__(self, container, *args, **kwargs):
+        super().__init__(container, *args, **kwargs)
+        canvas = tk.Canvas(self)
+        scrollbar = tk.Scrollbar(self, orient="vertical", command=canvas.yview)
+        self.scrollable_frame = tk.Frame(canvas)
+
+        self.scrollable_frame.bind(
+            "<Configure>",
+            lambda e: canvas.configure(
+                scrollregion=canvas.bbox("all")
+            )
+        )
+
+        canvas.create_window((0, 0), window=self.scrollable_frame, anchor="nw")
+
+        canvas.configure(yscrollcommand=scrollbar.set)
+
+        canvas.pack(side="left", fill="both", expand=True)
+        scrollbar.pack(side="right", fill="y",)
 
 class RadioButton:
 	def __init__(self,root,_id=None,callback=None):
@@ -98,35 +121,43 @@ class Question:
 		self.root = root
 		self._id = None
 		self.frame = tk.Frame(self.root)
-		self.questiontxt = tk.Text(self.frame,font=MEDIUM_FONT,height=2,width=50)
 		self.optionstxt = []
 		self.optionsbtn = []
 		self.var = []
+		self.keys = []
 		if data is not None:
 			self._id=data["id"]
-			self.questionlbl = tk.Label(self.frame,text=str(num),font=LARGE_FONT)
+			self.questionlbl = tk.Label(self.frame,width=3,text=str(num),font=LARGE_FONT)
 			self.questionlbl.grid(row=0,column=0)
+			self.questiontxt = st.ScrolledText(self.frame,font=MEDIUM_FONT,height=2,width=65,wrap=tk.WORD)
 			self.questiontxt.insert(tk.INSERT,data["question"])
 			self.questiontxt.configure(state="disabled")
-			self.questiontxt.grid(row=0,column=1)
+			self.questiontxt.grid(row=0,column=1,)
+			self.point = data["point"]
+			self.optionframe = ScrollableFrame(self.frame)
 			if data["type"] == "single":
 				for i in range(0,len(data["options"])):
-					self.optionsbtn.append(RadioButton(self.frame,data["options"][i]["id"],self.CallBackRadio))
+					if data["options"][i]["key"] == True:
+						self.keys.append(data["options"][i]["id"])
+					self.optionsbtn.append(RadioButton(self.optionframe.scrollable_frame,data["options"][i]["id"],self.CallBackRadio))
 					self.optionsbtn[i].Grid(i+1,0)
 
-					self.optionstxt.append(tk.Text(self.frame,font=MEDIUM_FONT,height=2,width=50))
+					self.optionstxt.append(st.ScrolledText(self.optionframe.scrollable_frame,font=MEDIUM_FONT,height=2,width=63))
 					self.optionstxt[i].insert(tk.INSERT,data["options"][i]["option"])
 					self.optionstxt[i].configure(state="disabled")
-					self.optionstxt[i].grid(row=i+1,column=1)
+					self.optionstxt[i].grid(row=i+1,column=1,)
 			else:
 				for i in range(0,len(data["options"])):
-					self.optionsbtn.append(CheckButton(self.frame,data["options"][i]["id"],self.CallBackCheck))
+					if data["options"][i]["key"] == True:
+						self.keys.append(data["options"][i]["id"])
+					self.optionsbtn.append(CheckButton(self.optionframe.scrollable_frame,data["options"][i]["id"],self.CallBackCheck))
 					self.optionsbtn[i].Grid(i+1,0)
 
-					self.optionstxt.append(tk.Text(self.frame,font=MEDIUM_FONT,height=2,width=50))
+					self.optionstxt.append(st.ScrolledText(self.optionframe.scrollable_frame,font=MEDIUM_FONT,height=2,width=63))
 					self.optionstxt[i].insert(tk.INSERT,data["options"][i]["option"])
 					self.optionstxt[i].configure(state="disabled")
-					self.optionstxt[i].grid(row=i+1,column=1)
+					self.optionstxt[i].grid(row=i+1,column=1,)
+			self.optionframe.grid(row=1,column=1,sticky="nwse")
 
 	def CallBackRadio(self,_id=None):
 		if _id is not None:
@@ -151,15 +182,14 @@ class Question:
 			self.var.sort()
 
 	def Grid(self,row=0,column=0):
-		self.frame.grid(row=row,column=column,sticky=tk.NW,columnspan=2,padx=50)
+		self.frame.grid(row=row,column=column,columnspan=2,sticky="nwse",padx=50)
 
 	def Hide(self):
 		self.frame.grid_forget()
 
 	def Response(self):
-		data = {}
-		data["question"] = self._id
-		data["response"] =  self.var
+		#data = ["section id","question id","keys","point","options id chosen",]
+		data = [0,self._id,self.keys,self.point,self.var,]
 		return data
 
 class Section:
@@ -186,12 +216,12 @@ class Section:
 		self.questions[self.currquestion].Grid(1,0)
 
 	def Grid(self,row=0,column=0):
-		self.sectionlbl.grid(row=0,column=0,padx=50,sticky=tk.NW)
+		self.sectionlbl.grid(row=0,column=0,sticky="nw",pady=10,padx=50)
 		if len(self.questions) > 0:
 			self.questions[0].Grid(1,0)
-		self.prevbtn.grid(row=2,column=0,sticky=tk.NW)
-		self.nextbtn.grid(row=2,column=1,sticky=tk.NW,)
-		self.frame.grid(row=row,column=column,sticky=tk.NW)
+		self.prevbtn.grid(row=2,column=0,sticky="nw",pady=10,padx=50)
+		self.nextbtn.grid(row=2,column=1,sticky="ne",pady=10,)
+		self.frame.grid(row=row,column=column,sticky="nwse")
 
 	def Next(self):
 		if self.currquestion < len(self.questions)-1:
@@ -209,11 +239,11 @@ class Section:
 		self.frame.grid_forget()
 
 	def Response(self):
-		data = {}
-		data["section"] = self._id
-		data["questions"] = []
+		data = [] 
 		for i in range(0,len(self.questions)):
-			data["questions"].append(self.questions[i].Response())
+			response = self.questions[i].Response()
+			response[0] = self._id
+			data.append(response)
 		return data
 
 class Test:
@@ -222,63 +252,74 @@ class Test:
 		self.callback = callback
 		self._id =None
 		self.frame =tk.Frame(self.root)
-		self.btnframe = tk.Frame(self.frame)
-		self.testlbl = tk.Label(self.frame,text=data["test"],font=LARGE_FONT)
+		self.btnframe = ScrollableFrame(self.frame,height=100,width=50)
+		self.testlbl = tk.Label(self.frame,text=data["test"],font=LARGE_FONT,pady=10,padx=50)
 		self.timelimit = []
 		self.timelimitlbl = None
 		self.sections = []
 		self.currsection = 0
 		self.instructionframe = None
+		self.data = data
 		if data is not None:
 			self._id = data["id"] 
 			for i in range(0,len(data["sections"])):
 				self.sections.append(Section(self.frame,data["sections"][i]))
-			self.timelimit.append(int(data["time_limit"]["hour"]))
-			self.timelimit.append(int(data["time_limit"]["minute"]))
-			self.timelimit.append(int(data["time_limit"]["second"]))
-			if self.timelimit[0]>9:
-				timestr = str(self.timelimit[0])
+			if data["time_limit"]["hour"] == "0" and data["time_limit"]["minute"] == "0":
+				timestr = "No Time Limit"
 			else:
-				timestr = "0" + str(self.timelimit[0])
-			if self.timelimit[1]>9:
-				timestr = timestr+":"+str(self.timelimit[1])
-			else:
-				timestr = timestr+":0" + str(self.timelimit[1])
-			if self.timelimit[2]>9:
-				timestr = timestr+":"+str(self.timelimit[2])
-			else:
-				timestr = timestr+":0" + str(self.timelimit[2])
+				self.timelimit.append(int(data["time_limit"]["hour"]))
+				self.timelimit.append(int(data["time_limit"]["minute"]))
+				self.timelimit.append(int(data["time_limit"]["second"]))
+				if self.timelimit[0]>9:
+					timestr = str(self.timelimit[0])
+				else:
+					timestr = "0" + str(self.timelimit[0])
+				if self.timelimit[1]>9:
+					timestr = timestr+":"+str(self.timelimit[1])
+				else:
+					timestr = timestr+":0" + str(self.timelimit[1])
+				if self.timelimit[2]>9:
+					timestr = timestr+":"+str(self.timelimit[2])
+				else:
+					timestr = timestr+":0" + str(self.timelimit[2])
 			self.timelimitlbl = tk.Label(self.frame,text=timestr,font=LARGE_FONT)
 		self.prevbtn = tk.Button(self.frame,text="Previous Section",font=MEDIUM_FONT,command=self.Back,)
 		self.nextbtn =tk.Button(self.frame,text="Next Section",font=MEDIUM_FONT,command=self.Next,)
 		if len(self.sections) == 1 or 0:
 			self.prevbtn.configure(state="disabled")
 			self.nextbtn.configure(state="disabled")
-		self.submitbtn = tk.Button(self.frame,text="Submit",font=MEDIUM_FONT,command=self.Submit)
+		self.submitbtn = tk.Button(self.frame,text="Submit",font=MEDIUM_FONT,command=self.Submit,)
 		self.exitbtn = tk.Button(self.frame,text="Exit",font=MEDIUM_FONT,command=self.Exit)
-	
+
 		for i in range(0,len(data["sections"])):
-			lbl =tk.Label(self.btnframe,text=data["sections"][i]["section"],font=MEDIUM_FONT)
-			lbl.grid(row=i*2,column=0,sticky=tk.NW)
-			frame = tk.Frame(self.btnframe)
+			lbl =tk.Label(self.btnframe.scrollable_frame,text=data["sections"][i]["section"],font=MEDIUM_FONT)
+			lbl.grid(row=i*2,column=0,sticky=tk.NW,padx=50)
+			frame = tk.Frame(self.btnframe.scrollable_frame)
 			for j in range(0,len(data["sections"][i]["questions"])):
 				btn = tk.Button(frame,text=str(j+1),width=3,font=MEDIUM_FONT,command=lambda ii=i,jj=j:self.Jump(ii,jj))
-				btn.grid(row=int(j/4),column=j%4,padx=5,pady=5)
-			frame.grid(row=i*2+1,column=0,sticky=tk.NW)
-			
+				btn.grid(row=int(j/4),column=j%4,padx=5,pady=5,sticky="nw")
+			frame.grid(row=i*2+1,column=0,sticky="nw",padx=50)
+			 
 	def Grid(self,):
 		self.HideInstruction()
-		self.testlbl.grid(row=0,column=0,padx=50,pady=10,sticky=tk.NW,)
-		self.timelimitlbl.grid(row=0,column=2,sticky=tk.NE)
-		self.timelimitlbl.after(1000,self.UpdateCountDownTimer)
+		self.testlbl.grid(row=0,column=0,sticky="nw",)
+		self.timelimitlbl.grid(row=0,column=1,sticky="ne",padx=50)
+		if self.data["time_limit"]["hour"] == "0" and self.data["time_limit"]["minute"] == "0":
+			pass
+		else:
+			self.timelimitlbl.after(1000,self.UpdateCountDownTimer)
 		if len(self.sections) > 0 :
 			self.sections[0].Grid(row=1,column=0,)
-		self.prevbtn.grid(row=2,column=0,sticky=tk.NW)
-		self.nextbtn.grid(row=2,column=1,sticky=tk.NW)
-		self.submitbtn.grid(row=3,column=0,sticky=tk.NW)
-		self.exitbtn.grid(row=3,column=1,sticky=tk.NW)
-		self.btnframe.grid(row=1,column=2,sticky=tk.NW)
-		self.frame.pack(expand=True,fill="both",side="top")
+		self.prevbtn.grid(row=2,column=0,sticky="nw",pady=30,padx=50)
+		self.nextbtn.grid(row=2,column=1,sticky="ne",pady=30,padx=50)
+		self.submitbtn.grid(row=3,column=0,sticky="nw",pady=30,padx=50)
+		self.exitbtn.grid(row=3,column=1,sticky="ne",pady=30,padx=50)
+		self.btnframe.grid(row=1,column=1,sticky="nwse",)
+		#self.frame.pack(expand=True,fill="both",)
+		self.frame.grid(row=0,column=0,sticky="nwse")
+		self.frame.rowconfigure(0,weight=1)
+		self.frame.columnconfigure(0,weight=1)
+
 
 
 	def Jump(self,i=0,j=0):
@@ -307,6 +348,7 @@ class Test:
 				if self.timelimit[0] == 0:
 					self.timelimit[1] = 0
 					self.timelimit[2] = 0
+					self.Response()
 				else:
 					self.timelimit[0] -= 1
 					self.timelimitlbl.after(1000,self.UpdateCountDownTimer)
@@ -328,7 +370,10 @@ class Test:
 			timestr = timestr+":"+str(self.timelimit[2])
 		else:
 			timestr = timestr+":0" + str(self.timelimit[2])
-		self.timelimitlbl.configure(text=timestr)
+		if self.timelimit[0] == 0 and self.timelimit[1] == 0 and self.timelimit[2] == 0:
+			pass
+		else:
+		   self.timelimitlbl.configure(text=timestr)
 
 	def Instruction(self,data=None,callback1=None,callback2=None):
 		self.instructionframe = tk.Frame(self.root)
@@ -365,9 +410,9 @@ class Test:
 		if self.callback is not None:
 			data = {}
 			data["test"] = self._id
-			data["sections"] = []
+			data["response"] = []
 			for i in range(0,len(self.sections)):
-				data["sections"].append(self.sections[i].Response())
+				data["response"].extend(self.sections[i].Response())
 			self.callback(data)
 
 	def Destroy(self):
@@ -410,6 +455,19 @@ class Quiz:
 			data = json.loads(file.read())
 		except:
 			return
+		if  data["date"]["year"] != 0 and data["date"]["month"] != 0 and  data["date"]["day"] != 0 :
+			if date.today().year == data["date"]["year"] and date.today().month == data["date"]["month"] and date.today().day == data["date"]["day"]:
+				pass
+			else:
+				return
+		if data["time"]["hour"] != 0 and data["time"]["minute"] != 0:
+			now = datetime.now()
+			current_time = current_time = now.strftime("%H:%M:%S")
+			current_time = current_time.split(":")
+			if int(current_time[0]) == data["time"]["hour"] and int(current_time[1]) >= data["time"]["minute"]:
+				pass
+			else:
+			    return
 		self.test = Test(self.root,data,self.CallBack)
 		conn = sqlite3.connect("Quiz.db")
 		cur = conn.cursor()
@@ -461,24 +519,20 @@ class Quiz:
 
 	def Evaluate(self,response=None,):
 		if self.data and response is not None:
-			keys = []
-			for i in range(0,len(self.data["sections"])):
-				for j in range(0,len(self.data["sections"][i]["questions"])):
-					key = []
-					for k in range(0,len(self.data["sections"][i]["questions"][j]["options"])):
-						if self.data["sections"][i]["questions"][j]["options"][k]["key"] == True:
-							key.append(self.data["sections"][i]["questions"][j]["options"][k]["id"])
-					keys.append((self.data["sections"][i]["id"],self.data["sections"][i]["questions"][j]["id"],key,))
-			result = []
-			for i in range(0,len(response["sections"])):
-				for j in range(0,len(response["sections"][i]["questions"])):
-					if response["sections"][i]["questions"][j]["response"] == keys[i+j][2] :
-						result.append((self.data["sections"][i]["id"],self.data["sections"][i]["questions"][j]["id"],1,))
-					elif len(response["sections"][i]["questions"][j]["response"]) == 0:
-						result.append((self.data["sections"][i]["id"],self.data["sections"][i]["questions"][j]["id"],-1,))
-					else:
-						result.append((self.data["sections"][i]["id"],self.data["sections"][i]["questions"][j]["id"],0,))
-			response.update({"result":result})
+			response["max_points"] = 0
+			response["score"] = 0
+			for i in range(0,len(response["response"])):
+				response["max_points"] += response["response"][i][3]
+				if response["response"][i][2] ==  response["response"][i][4]:
+					#correct
+					response["score"] += response["response"][i][3]
+					response["response"][i].append(1)
+				elif  len(response["response"][i][4]) == 0:
+					#no response
+					response["response"][i].append(0)
+				else:
+					#wrong
+					response["response"][i].append(-1)
 
 	def Exit(self):
 		if self.menuframe is not None:

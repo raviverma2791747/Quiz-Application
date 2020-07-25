@@ -1,5 +1,6 @@
 import tkinter as tk
 from tkinter import filedialog as fd 
+import tkinter.scrolledtext as st
 from tkcalendar import Calendar,DateEntry
 from tkinter import messagebox as mb
 import datetime as dt
@@ -39,7 +40,7 @@ class Option:
 		self._id = _id
 		self.keyvar = tk.IntVar()
 		self.optiontxtlbl = tk.Label(self.root,text="Option")
-		self.optiontxt = tk.Text(self.root,height=1)
+		self.optiontxt = st.ScrolledText(self.root,height=1)
 		self.optionkeylbl = tk.Label(self.root,text="Key")
 		self.optionkeychkbtn = tk.Checkbutton(self.root,variable=self.keyvar)
 
@@ -93,7 +94,7 @@ class Question:
 
 		self.frame = tk.LabelFrame(self.root,)
 		self.questiontxtlbl = tk.Label(self.frame,text="Question")
-		self.questiontxt = tk.Text(self.frame,height=2)
+		self.questiontxt = st.ScrolledText(self.frame,height=2)
 		self.quesbtnframe = tk.Frame(self.frame,)
 		self.addoptionsbtn = tk.Button(self.quesbtnframe,text="Add Option",command=self.AddOption)
 		self.pointlbl = tk.Label(self.quesbtnframe,text="Point") 
@@ -113,7 +114,7 @@ class Question:
 					self.pointvar.set(1)
 					self.pointspnbox.configure(state="normal")
 					self.pointspnbox.delete(0,"end")
-					self.pointspnbox.insert(tk.INSERT,data["point"])
+					self.pointspnbox.insert(tk.INSERT,str(data["point"]))
 
 	def AddOption(self,data=None,):
 		if self.options is None:
@@ -173,9 +174,9 @@ class Question:
 		data["options"] = []
 		data["type"] = "single"
 		if self.pointvar.get() == 0:
-			data["point"] = "0"
+			data["point"] = 0
 		else:
-			data["point"] = self.pointspnbox.get()
+			data["point"] = int(self.pointspnbox.get())
 		if self.options is not None:
 			count = 0
 			for i in range(0,len(self.options)):
@@ -205,7 +206,7 @@ class Section:
 		self.questionframe = tk.Frame(self.frame,)
 
 		self.sectionnamelbl = tk.Label(self.sectionframe,text="Section Name")
-		self.sectionametext= tk.Text(self.sectionframe,height="2")
+		self.sectionametext= st.ScrolledText(self.sectionframe,height="2")
 		self.sectionbtnframe = tk.Frame(self.sectionframe,)
 		#self.sectionremovebtn = tk.Button(self.sectionbtnframe,text="Remove",command=lambda:self.frame.destroy())
 		self.addquestionbtn = tk.Button(self.sectionbtnframe,text="Add Question",command=self.AddQuestion)
@@ -341,7 +342,7 @@ class Test:
 		self.sectionframe = tk.LabelFrame(self.frame,)
 
 		self.testnamelabel = tk.Label(self.testframe,text="Quiz Name",)
-		self.testnametext = tk.Text(self.testframe,height=1)
+		self.testnametext = st.ScrolledText(self.testframe,height=1)
 
 		self.testbtnframe = tk.Frame(self.testframe,)
 		self.testtimelimitlbl = tk.Label(self.testbtnframe,text="Quiz Time Limit")
@@ -377,23 +378,23 @@ class Test:
 				for i in range(0,len(data["sections"])):
 					self.AddSection(data["sections"][i])
 			if "date" in data:
-				if data["date"]["day"] == "0" and data["date"]["month"] == "0" and data["date"]["year"] == "0":
+				if data["date"]["day"] == 0 and data["date"]["month"] == 0 and data["date"]["year"] == 0:
 					self.testdatevar.set(0)
 				else:
 					self.testdatevar.set(1)
 					self.testdate.configure(state="enabled")
-					self.testdate.set_date(dt.datetime(int(data["date"]["year"]),int(data["date"]["month"]),int(data["date"]["day"])))
+					self.testdate.set_date(dt.datetime(data["date"]["year"],data["date"]["month"],data["date"]["day"]))
 			if "time" in data:
-				if data["time"]["hour"] == "0" and data["time"]["minute"] == "0":
+				if data["time"]["hour"] == 0 and data["time"]["minute"] == 0:
 					self.testtimevar.set(0)
 				else:
 					self.testtimevar.set(1)
 					self.testtimehrspnbox.configure(state="normal")
 					self.testtimehrspnbox.delete(0,"end")
-					self.testtimehrspnbox.insert(tk.INSERT,data["time"]["hour"])
+					self.testtimehrspnbox.insert(tk.INSERT,str(data["time"]["hour"]))
 					self.testtimeminspnbox.configure(state="normal")
 					self.testtimeminspnbox.delete(0,"end")
-					self.testtimeminspnbox.insert(tk.INSERT,data["time"]["minute"])
+					self.testtimeminspnbox.insert(tk.INSERT,str(data["time"]["minute"]))
 			if "time_limit" in data:
 				if data["time_limit"]["hour"] == "0" and data["time_limit"]["minute"] == "0":
 					self.testtimelimitvar.set(0)
@@ -517,15 +518,15 @@ class Test:
 			data["test"] = self.testnametext.get("1.0","end").rstrip("\n")
 			data["response_limit"] =  int(self.testlimitresponsespnbox.get())
 			if self.testdatevar.get() == 0:
-				data["date"] = {"day":"0","month":"0","year":"0",}
+				data["date"] = {"day":0,"month":0,"year":0,}
 			else:
 				date = str(self.testdate.get_date())
 				date = date.split("-")
-				data["date"] = {"day":date[2],"month":date[1],"year":date[0],}
+				data["date"] = {"day":int(date[2]),"month":int(date[1]),"year":int(date[0]),}
 			if self.testtimevar.get() == 0:
-				data["time"] = {"hour":"0" ,"minute": "0","second":"0",}
+				data["time"] = {"hour":0 ,"minute": 0,"second":0,}
 			else:
-				data["time"] = {"hour":self.testtimehrspnbox.get() ,"minute": self.testtimeminspnbox.get(),"second":"0",}
+				data["time"] = {"hour":int(self.testtimehrspnbox.get()) ,"minute": int(self.testtimeminspnbox.get()),"second":0,}
 			if self.testtimelimitvar.get() == 0:
 				data["time_limit"] = {"hour": "0", "minute": "0","second":"0",}
 			else:
@@ -555,15 +556,16 @@ class Test:
 			data["test"] = self.testnametext.get("1.0","end")
 			data["response_limit"] =  int(self.testlimitresponsespnbox.get())
 			if self.testdatevar.get() == 0:
-				data["date"] = {"day":"0","month":"0","year":"0",}
+				data["date"] = {"day":0,"month":0,"year":0,}
 			else:
+				print(self.testdatevar.get())
 				date = str(self.testdate.get_date())
 				date = date.split("-")
-				data["date"] = {"day":date[2],"month":date[1],"year":date[0],}
+				data["date"] = {"day":int(date[2]),"month":int(date[1]),"year":int(date[0]),}
 			if self.testtimevar.get() == 0:
-				data["time"] = {"hour":"0" ,"minute": "0","second":"0",}
+				data["time"] = {"hour":0 ,"minute": 0,"second":0,}
 			else:
-				data["time"] = {"hour":self.testtimehrspnbox.get() ,"minute": self.testtimeminspnbox.get(),"second":"0",}
+				data["time"] = {"hour":int(self.testtimehrspnbox.get()) ,"minute": int(self.testtimeminspnbox.get()),"second":0,}
 			if self.testtimelimitvar.get() == 0:
 				data["time_limit"] = {"hour": "0", "minute": "0","second":"0",}
 			else:
