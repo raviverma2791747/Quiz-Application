@@ -1,4 +1,5 @@
 import tkinter as tk
+from tkinter import messagebox as mb
 import sqlite3
 import json
 import quizeditor as QE
@@ -52,6 +53,12 @@ class Application:
 		lbutton.grid(row = 4, column = 0,sticky="E",pady=10)
 		sbutton.grid(row = 4, column = 1,sticky="E",pady=10)
 		self.loginframe.pack(fill="both")
+		try:
+			conn  = sqlite3.connect('file:Quiz.db?mode=rw', uri=True)
+		except:
+			mb.showerror("Database Error","Couldn't connect to Database")
+			exit()
+
 		self.loginwindow.mainloop()
 
 	def BackToLogin(self):
@@ -189,6 +196,7 @@ class Application:
 		self.window.mainloop()
 
 	def CallBack(self):
+		del self.app 
 		self.app = None
 		self.frame.pack()
 

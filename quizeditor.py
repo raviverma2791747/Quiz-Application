@@ -6,11 +6,13 @@ from tkinter import messagebox as mb
 import datetime as dt
 import json
 import sqlite3
+import os
 
 
 MEDIUM_FONT = ("Verdana",25)
 SMALL_MEDIUM_FONT = ("Verdana",17)
 SMALL_FONT = ("Verdana",12)
+VERY_SMALL_FONT = ("Verdana",11)
 
 class ScrollableFrame(tk.Frame):
     def __init__(self, container, *args, **kwargs):
@@ -39,8 +41,8 @@ class Option:
 		self.text = tk.StringVar() 
 		self._id = _id
 		self.keyvar = tk.IntVar()
-		self.optiontxtlbl = tk.Label(self.root,text="Option")
-		self.optiontxt = st.ScrolledText(self.root,height=1)
+		self.optiontxtlbl = tk.Label(self.root,text="Option",font=VERY_SMALL_FONT)
+		self.optiontxt = st.ScrolledText(self.root,height=1,relief=tk.FLAT,font=VERY_SMALL_FONT)
 		self.optionkeylbl = tk.Label(self.root,text="Key")
 		self.optionkeychkbtn = tk.Checkbutton(self.root,variable=self.keyvar)
 
@@ -54,13 +56,13 @@ class Option:
 			
 	def Grid(self,row=0,column=0):
 		self.optiontxtlbl.grid(row=row,column=column,)
-		self.optiontxt.grid(row=row,column=column+1)
+		self.optiontxt.grid(row=row,column=column+1,pady=1)
 		self.optionkeylbl.grid(row=row,column=column+2)
 		self.optionkeychkbtn.grid(row=row,column=column+3)
 
 	def Destroy(self):
 		self.optiontxtlbl.destroy()
-		self.optiontxt.destroy()
+		self.optiontxt.frame.destroy()
 		self.optionkeylbl.destroy()
 		self.optionkeychkbtn.destroy()
 
@@ -93,8 +95,8 @@ class Question:
 		self.pointvar = tk.IntVar()
 
 		self.frame = tk.LabelFrame(self.root,)
-		self.questiontxtlbl = tk.Label(self.frame,text="Question")
-		self.questiontxt = st.ScrolledText(self.frame,height=2)
+		self.questiontxtlbl = tk.Label(self.frame,text="Question",font=VERY_SMALL_FONT)
+		self.questiontxt = st.ScrolledText(self.frame,relief=tk.FLAT,height=2,font=VERY_SMALL_FONT)
 		self.quesbtnframe = tk.Frame(self.frame,)
 		self.addoptionsbtn = tk.Button(self.quesbtnframe,text="Add Option",command=self.AddOption)
 		self.pointlbl = tk.Label(self.quesbtnframe,text="Point") 
@@ -156,7 +158,7 @@ class Question:
 		self.pointspnbox.grid(row=2,column=1)
 		self.pointchkbtn.grid(row=2,column=2)
 		self.quesbtnframe.grid(row=0,column=2)
-		self.frame.grid(row=row,column=column,)
+		self.frame.grid(row=row,column=column,pady=5,ipadx=3,ipady=3,sticky=tk.NW)
 
 	def Destroy(self):
 		self.frame.destroy()
@@ -205,8 +207,8 @@ class Section:
 		self.sectionframe = tk.LabelFrame(self.frame,)
 		self.questionframe = tk.Frame(self.frame,)
 
-		self.sectionnamelbl = tk.Label(self.sectionframe,text="Section Name")
-		self.sectionametext= st.ScrolledText(self.sectionframe,height="2")
+		self.sectionnamelbl = tk.Label(self.sectionframe,text="Section Name",font=VERY_SMALL_FONT)
+		self.sectionametext= st.ScrolledText(self.sectionframe,relief=tk.FLAT,height="2",font=VERY_SMALL_FONT)
 		self.sectionbtnframe = tk.Frame(self.sectionframe,)
 		#self.sectionremovebtn = tk.Button(self.sectionbtnframe,text="Remove",command=lambda:self.frame.destroy())
 		self.addquestionbtn = tk.Button(self.sectionbtnframe,text="Add Question",command=self.AddQuestion)
@@ -329,20 +331,12 @@ class Test:
 		self.testtimevar = tk.IntVar()
 		self.testtimelimitvar = tk.IntVar()
 
-		self.wrapperframe = tk.Frame(self.root,)
-		self.canvas = tk.Canvas(self.wrapperframe,)
-		self.yscollbar = tk.Scrollbar(self.wrapperframe,orient="vertical",command=self.canvas.yview)
+		self.frame  = ScrollableFrame(self.root,)
+		self.testframe  = tk.Frame(self.frame.scrollable_frame,)
+		self.sectionframe = tk.LabelFrame(self.frame.scrollable_frame,)
 
-		self.canvas.configure(yscrollcommand=self.yscollbar.set)
-		self.canvas.bind("<Configure>",lambda e:self.canvas.configure(scrollregion = self.canvas.bbox("all")))
-		self.canvas.bind("")
-
-		self.frame  = tk.LabelFrame(self.canvas,)
-		self.testframe  = tk.Frame(self.frame,)
-		self.sectionframe = tk.LabelFrame(self.frame,)
-
-		self.testnamelabel = tk.Label(self.testframe,text="Quiz Name",)
-		self.testnametext = st.ScrolledText(self.testframe,height=1)
+		self.testnamelabel = tk.Label(self.testframe,text="Quiz Name",font=VERY_SMALL_FONT,)
+		self.testnametext = st.ScrolledText(self.testframe,relief=tk.FLAT,height=1,font=VERY_SMALL_FONT)
 
 		self.testbtnframe = tk.Frame(self.testframe,)
 		self.testtimelimitlbl = tk.Label(self.testbtnframe,text="Quiz Time Limit")
@@ -462,12 +456,7 @@ class Test:
 		self.testbtnframe.grid(row=0,column=2)
 		self.testframe.grid(row = 0,column = 0,sticky=tk.NW)
 		self.sectionframe.grid(row = 1,column = 0,padx = 70)
-		#self.canvas.pack(side=tk.LEFT,fill="both",expand="yes")
-		#self.yscollbar.pack(side=tk.RIGHT,fill="y")
-		self.canvas.pack(side=tk.LEFT,fill="both",expand="yes")
-		self.yscollbar.pack(side=tk.LEFT,fill="y",)
-		self.canvas.create_window((0,0),window=self.frame,anchor="nw")
-		self.wrapperframe.pack(fill="both",expand="yes")
+		self.frame.pack(fill="both",expand=True)
 
 	def RemoveSection(self,index=None):
 		if index is not None:
@@ -480,7 +469,8 @@ class Test:
 				self.removesectionsbtn[i].config(command=lambda:self.RemoveSection(i))
 
 	def Destroy(self):
-		self.wrapperframe.destroy()
+		#self.wrapperframe.destroy()
+		self.frame.destroy()
 
 	def GetID(self):
 		return self._id
@@ -537,8 +527,9 @@ class Test:
 					data["sections"].append(i.Export())
 			I = Instruction(data)
 			data.update(I.Export())
-			file = open(self.path,"w")
-			json.dump(data,file)
+			with open(self.path,"w") as file:
+				json.dump(data,file)
+
 		else:
 			self.name = savedialog.name.split("/")
 			self.name = self.name[len(self.name)-1]
@@ -558,7 +549,6 @@ class Test:
 			if self.testdatevar.get() == 0:
 				data["date"] = {"day":0,"month":0,"year":0,}
 			else:
-				print(self.testdatevar.get())
 				date = str(self.testdate.get_date())
 				date = date.split("-")
 				data["date"] = {"day":int(date[2]),"month":int(date[1]),"year":int(date[0]),}
@@ -584,7 +574,6 @@ class QuizEditor:
 		self.root = root
 		self.root.title("Quiz Editor")
 		self.test = None
-		self.conn =  sqlite3.connect("Quiz.db")
 		self.openwindow = None
 		self.openwindowbtns = None
 		self.menubar = tk.Menu(root)
@@ -597,6 +586,8 @@ class QuizEditor:
 		self.root.bind('<Control-o>',lambda e:self.Open())
 		self.filemenubar.add_command(label="Save",command=self.Save,accelerator="Ctrl+S")
 		self.root.bind('<Control-s>',lambda e:self.Save())
+		self.filemenubar.add_command(label="Close",command=self.Close,accelerator="Ctrl+C")
+		self.root.bind('<Control-q>',lambda e:self.Close())
 		self.filemenubar.add_command(label="Exit",command=self.Exit,accelerator="Ctrl+Q")
 		self.root.bind('<Control-q>',lambda e:self.Exit())
 
@@ -625,11 +616,11 @@ class QuizEditor:
 				try :
 					data = json.loads(file.read())
 				except:
-					print("json file error")
 					return 
 				self.test = Test(self.root,data,_id,name,path)
 				self.openwindow.destroy()
 				self.openwindow = None
+				file.close()
 			else:
 				self.test = Test(self.root,)
 			self.test.Grid()
@@ -645,31 +636,54 @@ class QuizEditor:
 			self.openwindow.title("Open")
 			self.openwindow.grab_set()
 			self.openwindow.resizable(height=False,width=False)
-			scrollframe = ScrollableFrame(self.openwindow)
-			cursor = self.conn.cursor().execute("SELECT * FROM quizzes")
+			self.scrollframe = ScrollableFrame(self.openwindow)
+			conn =sqlite3.connect("Quiz.db")
+			cursor = conn.cursor().execute("SELECT * FROM quizzes")
 			quizzes = cursor.fetchall()
-			tlabel = tk.Label(scrollframe.scrollable_frame,text="List of Quizzes to Edit!",font=SMALL_MEDIUM_FONT)
-			tlabel.pack()
+			tlabel = tk.Label(self.scrollframe.scrollable_frame,text="List of Quizzes to Edit!",font=SMALL_MEDIUM_FONT)
+			tlabel.grid(row=0,column=0,columnspan=2,sticky="ew")
 			if len(quizzes) == 0:
-				lbl = tk.Label(scrollframe.scrollable_frame,text="No quizzes to edit",font=SMALL_FONT)
-				lbl.pack()
+				lbl = tk.Label(self.scrollframe.scrollable_frame,text="No quizzes to edit",font=SMALL_FONT)
+				lbl.grid(row=1,column=0,columnspan=2,sticky="ew")
 			else:
 				self.openwindowbtns = []
 				for i in range(0,len(quizzes)):
-					self.openwindowbtns.append(tk.Button(scrollframe.scrollable_frame,text=quizzes[i][1],relief=tk.FLAT,font=SMALL_FONT,command=lambda j=i:self.New(quizzes[j][0],quizzes[j][1],quizzes[j][2])))
-					self.openwindowbtns[i].pack()
-			scrollframe.pack()
+					self.openwindowbtns.append(tk.Button(self.scrollframe.scrollable_frame,text=quizzes[i][1],relief=tk.FLAT,font=SMALL_FONT,command=lambda j=i:self.New(quizzes[j][0],quizzes[j][1],quizzes[j][2])))
+					self.openwindowbtns[i].grid(row=i+1,column=0,padx=10,sticky="ew")
+					rmovequizbtn  = tk.Button(self.scrollframe.scrollable_frame,text="Remove",font=SMALL_FONT,command=lambda j=i:self.RemoveQuiz(quizzes[j]))
+					rmovequizbtn.grid(row=i+1,column=1,sticky="ew")
+			self.scrollframe.pack(expand=True,fill="both")
 		else:
 			self.Save()
 			self.DestroyTest()
 			self.Open()
 
+	def RemoveQuiz(self,row=None):
+		if row is not None:
+			quizrmqmb = mb.askquestion("","Are you sure you want to remove the quiz?")
+			if quizrmqmb == "yes":
+				if os.path.exists(row[2]):
+					conn =  sqlite3.connect("Quiz.db")
+					cursor = conn.cursor()
+					cursor.execute("DELETE FROM quizzes WHERE id=?",(row[0],))
+					conn.commit()
+					os.remove(row[2])
+					self.openwindow.destroy()
+					self.Open()
+
 	def Save(self):
 		if self.test is not None:
-			if self.test.GetID() is None:
-				self.SaveDialog()
-			else:
-				self.test.Export()
+			svfmb = mb.askquestion("Save","Do you want to save file?")
+			if svfmb == "yes":
+				if self.test.GetID() is None:
+					self.SaveDialog()
+				else:
+					self.test.Export()
+
+	def Close(self):
+		if self.test is not None:
+			self.Save()
+			self.DestroyTest()
 
 	def Exit(self):
 		if self.test is not None:
@@ -689,9 +703,11 @@ class QuizEditor:
 		self.savedialog = fd.asksaveasfile(filetypes = [("JSON","*.json")], defaultextension = [("JSON","*.json")]) 
 		if self.savedialog is not None:
 			self.test.Export(self.savedialog)
+			self.savedialog.close()
 
 	def DestroyTest(self):
 		self.test.Destroy()
+		del self.test
 		self.test = None
 	
 if __name__ == "__main__" :

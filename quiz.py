@@ -113,8 +113,6 @@ class CheckButton:
 	def Grid(self,row=0,column=0):
 		self.button.grid(row=row,column=column)
 		
-	def Pack(self):
-		self.button.pack()
 
 class Question:
 	def __init__(self,root,data=None,num=0):
@@ -123,8 +121,9 @@ class Question:
 		self.frame = tk.Frame(self.root)
 		self.optionstxt = []
 		self.optionsbtn = []
-		self.var = []
+		self.var =  None
 		self.keys = []
+		self._type = None
 		if data is not None:
 			self._id=data["id"]
 			self.questionlbl = tk.Label(self.frame,width=3,text=str(num),font=LARGE_FONT)
@@ -136,24 +135,27 @@ class Question:
 			self.point = data["point"]
 			self.optionframe = ScrollableFrame(self.frame)
 			if data["type"] == "single":
+				self._type = "single"
 				for i in range(0,len(data["options"])):
 					if data["options"][i]["key"] == True:
 						self.keys.append(data["options"][i]["id"])
 					self.optionsbtn.append(RadioButton(self.optionframe.scrollable_frame,data["options"][i]["id"],self.CallBackRadio))
 					self.optionsbtn[i].Grid(i+1,0)
 
-					self.optionstxt.append(st.ScrolledText(self.optionframe.scrollable_frame,font=MEDIUM_FONT,height=2,width=63))
+					self.optionstxt.append(st.ScrolledText(self.optionframe.scrollable_frame,font=MEDIUM_FONT,height=2,width=60))
 					self.optionstxt[i].insert(tk.INSERT,data["options"][i]["option"])
 					self.optionstxt[i].configure(state="disabled")
 					self.optionstxt[i].grid(row=i+1,column=1,)
 			else:
+				self._type = "multiple"
+				self.var = []
 				for i in range(0,len(data["options"])):
 					if data["options"][i]["key"] == True:
 						self.keys.append(data["options"][i]["id"])
 					self.optionsbtn.append(CheckButton(self.optionframe.scrollable_frame,data["options"][i]["id"],self.CallBackCheck))
 					self.optionsbtn[i].Grid(i+1,0)
 
-					self.optionstxt.append(st.ScrolledText(self.optionframe.scrollable_frame,font=MEDIUM_FONT,height=2,width=63))
+					self.optionstxt.append(st.ScrolledText(self.optionframe.scrollable_frame,font=MEDIUM_FONT,height=2,width=50))
 					self.optionstxt[i].insert(tk.INSERT,data["options"][i]["option"])
 					self.optionstxt[i].configure(state="disabled")
 					self.optionstxt[i].grid(row=i+1,column=1,)
@@ -162,14 +164,14 @@ class Question:
 	def CallBackRadio(self,_id=None):
 		if _id is not None:
 			if _id == -1:
-				del self.var[0]
-			else:
-				if len(self.var) > 0:
-					del self.var[0]
-				self.var.append(_id)
-			for i in self.optionsbtn:
-				if i.GetId() != _id and i.GetState() is True:
+				self.var = None
+				for i in self.optionsbtn:
 					i.SetState(False)
+			else:
+				self.var = _id
+				for i in self.optionsbtn:
+				    if i.GetId() != _id and i.GetState() == True:
+				    	i.SetState(False)
 
 	def CallBackCheck(self,_id=None):
 		if _id is not None:
@@ -189,6 +191,11 @@ class Question:
 
 	def Response(self):
 		#data = ["section id","question id","keys","point","options id chosen",]
+		if self._type == "single":
+			if self.var is None:
+				self.var = []
+			else:
+				self.var = [self.var,]
 		data = [0,self._id,self.keys,self.point,self.var,]
 		return data
 
@@ -296,7 +303,7 @@ class Test:
 			lbl.grid(row=i*2,column=0,sticky=tk.NW,padx=50)
 			frame = tk.Frame(self.btnframe.scrollable_frame)
 			for j in range(0,len(data["sections"][i]["questions"])):
-				btn = tk.Button(frame,text=str(j+1),width=3,font=MEDIUM_FONT,command=lambda ii=i,jj=j:self.Jump(ii,jj))
+				btn = tk.Button(frame,text=str(j+1),width=3,font=MEDIUM_FONT,bg="gray",fg="white",relief="flat",command=lambda ii=i,jj=j:self.Jump(ii,jj))
 				btn.grid(row=int(j/4),column=j%4,padx=5,pady=5,sticky="nw")
 			frame.grid(row=i*2+1,column=0,sticky="nw",padx=50)
 			 
@@ -466,7 +473,9 @@ class Quiz:
 			now = datetime.now()
 			current_time = current_time = now.strftime("%H:%M:%S")
 			current_time = current_time.split(":")
-			if int(current_time[0]) == data["time"]["hour"] and int(current_time[1]) >= data["time"]["minute"]:
+			current_time[0] = int(current_time[0])
+			current_time[1] = int(current_time[1])
+			if current_time[0] >= data["time"]["hour"] and current_time[1] >= data["time"]["minute"]:
 				pass
 			else:
 				quiz_time = ""
@@ -527,6 +536,7 @@ class Quiz:
 			json.dump(data,file)
 		conn.commit()
 		self.test.Destroy()
+		del self.test 
 		self.test = None
 		self.menuframe.pack()
 
@@ -535,18 +545,24 @@ class Quiz:
 		if self.data and response is not None:
 			response["max_points"] = 0
 			response["score"] = 0
+			response["correct"] = 0
+			response["incorrect"] = 0
+			response["no_response"] = 0
 			for i in range(0,len(response["response"])):
 				response["max_points"] += response["response"][i][3]
 				if response["response"][i][2] ==  response["response"][i][4]:
 					#correct
 					response["score"] += response["response"][i][3]
 					response["response"][i].append(1)
+					response["correct"] += 1
 				elif  len(response["response"][i][4]) == 0:
 					#no response
 					response["response"][i].append(0)
+					response["no_response"] += 1
 				else:
 					#wrong
 					response["response"][i].append(-1)
+					response["incorrect"] += 1
 
 	def Exit(self):
 		if self.menuframe is not None:
