@@ -6,6 +6,8 @@ import sqlite3
 import time
 from datetime import datetime
 from datetime import date
+
+VERY_LARGE_FONT = ("Verdana",30)
 LARGE_FONT = ("Verdana",25)
 MEDIUM_FONT = ("Verdana",15)
 SMALL_FONT =("Verdana",10)
@@ -443,14 +445,18 @@ class Quiz:
 		if self.menubuttons is None:
 			cursor =  self.conn.execute("SELECT * FROM quizzes")
 			row = cursor.fetchall()
-			label = tk.Label(self.menuframe,text="Quizzes Available!",font=("Verdana",50))
+			label = tk.Label(self.menuframe,text="Quizzes",font=("Verdana",50))
 			label.grid(row=0,column=0,sticky="W")
 			exitbtn = tk.Button(self.menuframe,text="Exit",font=MEDIUM_FONT,command=self.Exit)
 			exitbtn.grid(row=0,column=2,sticky="E")
 			self.menubuttons = []
-			for i in range(0,len(row)):
-				self.menubuttons.append(tk.Button(self.menuframe,text=row[i][1],font=("Verdana",30),relief=tk.FLAT,command=lambda j=i:self.Start(row[j],j)))
-				self.menubuttons[i].grid(row=i+1,column=0,padx=10,sticky="W")
+			if len(row) == 0:
+				noquizavailablelbl = tk.Label(self.menuframe,text="No quizzes available right now!",font=VERY_LARGE_FONT)
+				noquizavailablelbl.grid(row=1,column=0,padx=10,sticky="W")
+			else:
+				for i in range(0,len(row)):
+					self.menubuttons.append(tk.Button(self.menuframe,text=row[i][1],font=("Verdana",30),relief=tk.FLAT,command=lambda j=i:self.Start(row[j],j)))
+					self.menubuttons[i].grid(row=i+1,column=0,padx=10,sticky="W")
 			self.menuframe.pack()
 		else:
 			self.test.HideInstruction()
@@ -466,7 +472,15 @@ class Quiz:
 			if date.today().year == data["date"]["year"] and date.today().month == data["date"]["month"] and date.today().day == data["date"]["day"]:
 				pass
 			else:
-				lbl = tk.Label(self.menuframe,text="Quiz will be available on " + str(data["date"]["day"]) + "/" + str(data["date"]["month"]) + "/" + str(data["date"]["year"]),font=MEDIUM_FONT)
+				if data["time"]["hour"] == 0  and data["time"]["minute"] == 0:
+					lbl = tk.Label(self.menuframe,text="Quiz will be available on " + str(data["date"]["day"]) + "/" + str(data["date"]["month"]) + "/" + str(data["date"]["year"]),font=MEDIUM_FONT)
+				else:
+					timestr = str(data["time"]["hour"]) + ":"
+					if data["time"]["minute"] < 10:
+						timestr += "0" + str(data["time"]["minute"])
+					else:
+						timestr += str(data["time"]["minute"])
+					lbl = tk.Label(self.menuframe,text="Quiz will be available on " + str(data["date"]["day"]) + "/" + str(data["date"]["month"]) + "/" + str(data["date"]["year"]) + " " + timestr  ,font=MEDIUM_FONT)
 				lbl.grid(row=button_row+1,column=1)
 				return
 		if data["time"]["hour"] != 0 or data["time"]["minute"] != 0:

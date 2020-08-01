@@ -108,22 +108,40 @@ class User:
 		conn = sqlite3.connect("Quiz.db")
 		cur = conn.cursor()
 
-		cur.execute("SELECT * FROM responses WHERE user=?",(self._id,))
-		row = cur.fetchall()
-
-		if len(row) > 0:
-			for i in range(0,len(row)):
-				cur.execute("SELECT * FROM quizzes WHERE id=? ",(row[i][1],))
-				name = cur.fetchone()
-				if name is not None:
-					rbutton = tk.Button(self.userresponseframe.scrollable_frame,text=name[1],font=SMALL_FONT,command=lambda r=row[i] ,n = name[1] ,: self.ViewResponse(r,n))
-					rbutton.grid(row=i+1,column=0,sticky=tk.W+tk.E)
-					if self.privilege == 1:
-						exportresponsesbtn = tk.Button(self.userresponseframe.scrollable_frame,text="Export",font=SMALL_FONT,command=lambda r=row[i][1],n = name[1]: self.ExportResponse(n,r))
-						exportresponsesbtn.grid(row=i+1,column=1)
+		if self.privilege == 1:
+			cur.execute("SELECT DISTINCT quiz FROM responses")
+			row = cur.fetchall()
+			print(row)
+			if len(row) > 0:
+				for i in range(0,len(row)):
+					cur.execute("SELECT * FROM responses WHERE user=? AND quiz =?",(self._id,row[i][0]))
+					rrow = cur.fetchone()
+					print(rrow)
+					cur.execute("SELECT * FROM quizzes WHERE id=? ",(row[i][0],))
+					name = cur.fetchone()
+					if name is not None:
+						rbutton = tk.Button(self.userresponseframe.scrollable_frame,text=name[1],font=SMALL_FONT,command=lambda r=rrow ,n = name[1] ,: self.ViewResponse(r,n))
+						rbutton.grid(row=i+1,column=0,sticky=tk.W+tk.E)
+						if rrow is None:
+							rbutton.configure(state="disabled")
+					exportbtn = tk.Button(self.userresponseframe.scrollable_frame,text="Export",font=SMALL_FONT,command=lambda n=name[1],qid = name[0]:self.ExportResponse(n,qid))
+					exportbtn.grid(row=i+1,column=1,sticky=tk.W+tk.E)
+			else:
+				noresponsemsglbl = tk.Label(self.userresponseframe.scrollable_frame,text="No Responses to Show",font=MEDIUM_FONT)
+				noresponsemsglbl.grid(row=1,column=0,sticky="E")
 		else:
-			noresponsemsglbl = tk.Label(self.userresponseframe.scrollable_frame,text="No Responses to Show",font=MEDIUM_FONT)
-			noresponsemsglbl.grid(row=1,column=0,sticky="E")
+			cur.execute("SELECT * FROM responses WHERE user=?",(self._id,))
+			row = cur.fetchall()
+			if len(row) > 0:
+				for i in range(0,len(row)):
+					cur.execute("SELECT * FROM quizzes WHERE id=? ",(row[i][1],))
+					name = cur.fetchone()
+					if name is not None:
+						rbutton = tk.Button(self.userresponseframe.scrollable_frame,text=name[1],font=SMALL_FONT,command=lambda r=row[i] ,n = name[1] ,: self.ViewResponse(r,n))
+						rbutton.grid(row=i+1,column=0,sticky=tk.W+tk.E)
+			else:
+				noresponsemsglbl = tk.Label(self.userresponseframe.scrollable_frame,text="No Responses to Show",font=MEDIUM_FONT,)
+				noresponsemsglbl.grid(row=1,column=0,sticky="E")
 
 		if self.callback is not None:
 			exitbtn = tk.Button(self.userleftframe,text="Exit",font=MEDIUM_FONT,command=self.Exit)
