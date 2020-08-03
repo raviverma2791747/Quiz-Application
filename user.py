@@ -111,12 +111,10 @@ class User:
 		if self.privilege == 1:
 			cur.execute("SELECT DISTINCT quiz FROM responses")
 			row = cur.fetchall()
-			print(row)
 			if len(row) > 0:
 				for i in range(0,len(row)):
 					cur.execute("SELECT * FROM responses WHERE user=? AND quiz =?",(self._id,row[i][0]))
 					rrow = cur.fetchone()
-					print(rrow)
 					cur.execute("SELECT * FROM quizzes WHERE id=? ",(row[i][0],))
 					name = cur.fetchone()
 					if name is not None:
